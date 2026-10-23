@@ -1,6 +1,28 @@
-export default function Logo({ size = 40, showWordmark = false }) {
+import { useState } from 'react';
+
+export default function Logo({ size = 40, showWordmark = false, className = '' }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  // If image fails to load, fall back to the built-in SVG
+  if (!imgFailed) {
+    return (
+      <img
+        src="/logo.jpg"
+        alt="NearBai"
+        onError={() => setImgFailed(true)}
+        className={`object-contain select-none ${className}`}
+        style={{
+          height: size,
+          width: 'auto',
+          maxWidth: showWordmark ? 'none' : size * 2.5,
+        }}
+      />
+    );
+  }
+
+  // ── Fallback SVG (original design) ──
   return (
-    <div className="flex items-center gap-2.5">
+    <div className={`flex items-center gap-2.5 ${className}`}>
       <svg
         width={size}
         height={size}
@@ -16,13 +38,7 @@ export default function Logo({ size = 40, showWordmark = false }) {
             <stop offset="100%" stopColor="#ec4899" />
           </linearGradient>
         </defs>
-
         <rect x="0" y="0" width="64" height="64" rx="18" fill="url(#nbGrad)" />
-        <path
-          d="M32 14c-7.2 0-13 5.8-13 13 0 9.2 10.4 18.5 12.3 20a1.1 1.1 0 001.4 0c1.9-1.5 12.3-10.8 12.3-20 0-7.2-5.8-13-13-13z"
-          fill="white"
-          opacity="0.1"
-        />
         <path
           d="M20 32l12-10 12 10v14a2 2 0 01-2 2H22a2 2 0 01-2-2V32z"
           fill="white"

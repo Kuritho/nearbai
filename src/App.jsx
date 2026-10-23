@@ -5,11 +5,17 @@ import { ToastProvider } from './components/Toast';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 
-// Public
+// ─── Public pages ───
+import LandingPage from './pages/public/LandingPage';
+import BrowsePage from './pages/public/BrowsePage';
+import PropertyDetail from './pages/public/PropertyDetail';
+import AboutPage from './pages/public/AboutPage';
+import ContactPage from './pages/public/ContactPage';
+import SignupPage from './pages/public/SignupPage';
 import ReservePage from './pages/public/ReservePage';
 import ReserveSuccess from './pages/public/ReserveSuccess';
 
-// Admin
+// ─── Admin pages ───
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageProperties from './pages/admin/ManageProperties';
 import ManageRooms from './pages/admin/ManageRooms';
@@ -21,78 +27,67 @@ import Expenses from './pages/admin/Expenses';
 import Analytics from './pages/admin/Analytics';
 import PaymentSettings from './pages/admin/PaymentSettings';
 import ManageUsers from './pages/admin/ManageUsers';
+import Announcements from './pages/admin/Announcements';
 
-// Caretaker
+// ─── Caretaker ───
 import CaretakerDashboard from './pages/caretaker/CaretakerDashboard';
 
-// Tenant
+// ─── Tenant ───
 import TenantDashboard from './pages/tenant/TenantDashboard';
 import PayBill from './pages/tenant/PayBill';
 import PaymentPending from './pages/tenant/PaymentPending';
 import Receipt from './pages/tenant/Receipt';
+import MyBookings from './pages/tenant/MyBookings';
+import Favorites from './pages/tenant/Favorites';
+import Messages from './pages/tenant/Messages';
 
 // ============================================================
 // IMPORT SANITY CHECK — logs any missing page to the console
 // ============================================================
 const PAGE_IMPORTS = {
   Login,
-  ReservePage,
-  ReserveSuccess,
-  AdminDashboard,
-  ManageProperties,
-  ManageRooms,
-  ManageTenants,
-  Reservations,
-  RentPayments,
-  UtilityCharges,
-  Expenses,
-  Analytics,
-  PaymentSettings,
-  ManageUsers,
+  LandingPage, BrowsePage, PropertyDetail, AboutPage, ContactPage,
+  SignupPage, ReservePage, ReserveSuccess,
+  AdminDashboard, ManageProperties, ManageRooms, ManageTenants,
+  Reservations, RentPayments, UtilityCharges, Expenses, Analytics,
+  PaymentSettings, ManageUsers, Announcements,
   CaretakerDashboard,
-  TenantDashboard,
-  PayBill,
-  PaymentPending,
-  Receipt,
+  TenantDashboard, PayBill, PaymentPending, Receipt,
+  MyBookings, Favorites, Messages,
   Layout,
 };
 
 (() => {
-  const missing = Object.entries(PAGE_IMPORTS)
-    .filter(([, v]) => v === undefined || v === null)
-    .map(([k]) => k);
-
-  if (missing.length) {
-    console.error(
-      '❌ NearBai: The following page components are MISSING or not default-exported:',
-      missing
-    );
-    console.error(
-      '💡 Fix: open each file listed and make sure it ends with `export default ComponentName;`'
-    );
+  const problems = [];
+  Object.entries(PAGE_IMPORTS).forEach(([name, val]) => {
+    if (val === undefined || val === null) {
+      problems.push(`❌ ${name}: MISSING (file not found or no default export)`);
+    } else if (typeof val !== 'function' && typeof val !== 'string') {
+      problems.push(`❌ ${name}: BAD EXPORT (got ${typeof val})`);
+    }
+  });
+  if (problems.length) {
+    console.error('🔥 NearBai — Component Import Problems:');
+    problems.forEach((p) => console.error('  ' + p));
   } else {
     console.log('✅ NearBai: All page imports resolved successfully.');
   }
 })();
 
 // ============================================================
-// ERROR BOUNDARY — shows a readable error if a page crashes
+// ERROR BOUNDARY — shows a clean screen if a page crashes
 // ============================================================
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { error: null, errorInfo: null };
+    this.state = { error: null };
   }
-
   static getDerivedStateFromError(error) {
     return { error };
   }
-
   componentDidCatch(error, errorInfo) {
-    this.setState({ errorInfo });
     console.error('🔥 Page render error:', error, errorInfo);
   }
-
   render() {
     if (this.state.error) {
       return (
@@ -101,38 +96,17 @@ class ErrorBoundary extends Component {
             <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center mb-4">
               <span className="text-rose-500 text-2xl">⚠️</span>
             </div>
-            <h1 className="text-xl font-extrabold text-slate-900 mb-2">
-              Something went wrong
-            </h1>
+            <h1 className="text-xl font-extrabold text-slate-900 mb-2">Something went wrong</h1>
             <p className="text-sm text-slate-600 mb-4">
               A page failed to load. This is usually caused by a missing file or a
               broken import. Check the browser console for details.
             </p>
-            <details className="mb-4">
-              <summary className="text-xs font-semibold text-slate-500 cursor-pointer hover:text-slate-700">
-                Show error details
-              </summary>
-              <pre className="mt-2 bg-slate-50 p-3 rounded-xl text-[10px] text-rose-700 overflow-auto max-h-40 whitespace-pre-wrap">
-                {String(this.state.error)}
-                {'\n\n'}
-                {this.state.errorInfo?.componentStack}
-              </pre>
-            </details>
+            <pre className="bg-slate-50 p-3 rounded-xl text-[10px] text-rose-700 overflow-auto max-h-40 whitespace-pre-wrap mb-4">
+              {String(this.state.error)}
+            </pre>
             <div className="flex gap-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="btn-primary flex-1"
-              >
-                Reload page
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/login';
-                }}
-                className="btn-secondary flex-1"
-              >
-                Back to Login
-              </button>
+              <button onClick={() => window.location.reload()} className="btn-primary flex-1">Reload</button>
+              <button onClick={() => { window.location.href = '/'; }} className="btn-secondary flex-1">Home</button>
             </div>
           </div>
         </div>
@@ -143,7 +117,7 @@ class ErrorBoundary extends Component {
 }
 
 // ============================================================
-// PAGE FALLBACK — shown when a route's component is undefined
+// MISSING PAGE FALLBACK
 // ============================================================
 function MissingPage({ name }) {
   return (
@@ -152,37 +126,20 @@ function MissingPage({ name }) {
         <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
           <span className="text-amber-500 text-3xl">🔧</span>
         </div>
-        <h1 className="text-xl font-extrabold text-slate-900 mb-2">
-          Page unavailable
-        </h1>
+        <h1 className="text-xl font-extrabold text-slate-900 mb-2">Page unavailable</h1>
         <p className="text-sm text-slate-600 mb-4">
-          The <strong>{name}</strong> page hasn't been created yet, or its file
-          doesn't have a <code className="bg-slate-100 px-1 rounded">export default</code>.
+          The <strong>{name}</strong> page hasn't been created yet, or its file doesn't have a <code className="bg-slate-100 px-1 rounded">export default</code>.
         </p>
-        <p className="text-xs text-slate-500">
-          Open the browser console (<kbd>F12</kbd>) — it lists exactly which
-          components are missing.
-        </p>
-        <button
-          onClick={() => window.history.back()}
-          className="btn-secondary mt-6"
-        >
-          ← Go back
-        </button>
+        <button onClick={() => window.history.back()} className="btn-secondary mt-2">← Go back</button>
       </div>
     </div>
   );
 }
 
-// Wrap a page so an undefined import doesn't crash the whole app
 function Safe({ component: Comp, name, role }) {
-  if (!Comp) {
-    return <MissingPage name={name} />;
-  }
+  if (!Comp) return <MissingPage name={name} />;
   const element = <Comp />;
-  if (role) {
-    return <ProtectedRoute role={role}>{element}</ProtectedRoute>;
-  }
+  if (role) return <ProtectedRoute role={role}>{element}</ProtectedRoute>;
   return element;
 }
 
@@ -206,14 +163,6 @@ function ProtectedRoute({ children, role }) {
       : '/tenant';
     return <Navigate to={redirect} replace />;
   }
-  // Guard against broken Layout too
-  if (!Layout) {
-    return (
-      <div className="p-8 text-rose-600">
-        ⚠️ Layout component is missing — check <code>src/components/Layout.jsx</code>
-      </div>
-    );
-  }
   return <Layout>{children}</Layout>;
 }
 
@@ -223,104 +172,54 @@ function ProtectedRoute({ children, role }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* PUBLIC */}
+      {/* ============ PUBLIC (no login) ============ */}
+      <Route path="/" element={<Safe component={LandingPage} name="LandingPage" />} />
+      <Route path="/browse" element={<Safe component={BrowsePage} name="BrowsePage" />} />
+      <Route path="/browse/:id" element={<Safe component={PropertyDetail} name="PropertyDetail" />} />
+      <Route path="/about" element={<Safe component={AboutPage} name="AboutPage" />} />
+      <Route path="/contact" element={<Safe component={ContactPage} name="ContactPage" />} />
       <Route path="/login" element={<Safe component={Login} name="Login" />} />
+      <Route path="/signup" element={<Safe component={SignupPage} name="SignupPage" />} />
       <Route path="/reserve" element={<Safe component={ReservePage} name="ReservePage" />} />
-      <Route
-        path="/reserve/success/:reference"
-        element={<Safe component={ReserveSuccess} name="ReserveSuccess" />}
-      />
+      <Route path="/reserve/success/:reference" element={<Safe component={ReserveSuccess} name="ReserveSuccess" />} />
 
-      {/* ADMIN */}
-      <Route
-        path="/admin"
-        element={<Safe component={AdminDashboard} name="AdminDashboard" role="admin" />}
-      />
-      <Route
-        path="/admin/properties"
-        element={<Safe component={ManageProperties} name="ManageProperties" role="admin" />}
-      />
-      <Route
-        path="/admin/rooms"
-        element={<Safe component={ManageRooms} name="ManageRooms" role="admin" />}
-      />
-      <Route
-        path="/admin/tenants"
-        element={<Safe component={ManageTenants} name="ManageTenants" role="admin" />}
-      />
-      <Route
-        path="/admin/reservations"
-        element={<Safe component={Reservations} name="Reservations" role="admin" />}
-      />
-      <Route
-        path="/admin/rent"
-        element={<Safe component={RentPayments} name="RentPayments" role="admin" />}
-      />
-      <Route
-        path="/admin/utilities"
-        element={<Safe component={UtilityCharges} name="UtilityCharges" role="admin" />}
-      />
-      <Route
-        path="/admin/expenses"
-        element={<Safe component={Expenses} name="Expenses" role="admin" />}
-      />
-      <Route
-        path="/admin/analytics"
-        element={<Safe component={Analytics} name="Analytics" role="admin" />}
-      />
-      <Route
-        path="/admin/settings"
-        element={<Safe component={PaymentSettings} name="PaymentSettings" role="admin" />}
-      />
-      <Route
-        path="/admin/users"
-        element={<Safe component={ManageUsers} name="ManageUsers" role="admin" />}
-      />
+      {/* ============ ADMIN ============ */}
+      <Route path="/admin" element={<Safe component={AdminDashboard} name="AdminDashboard" role="admin" />} />
+      <Route path="/admin/properties" element={<Safe component={ManageProperties} name="ManageProperties" role="admin" />} />
+      <Route path="/admin/rooms" element={<Safe component={ManageRooms} name="ManageRooms" role="admin" />} />
+      <Route path="/admin/tenants" element={<Safe component={ManageTenants} name="ManageTenants" role="admin" />} />
+      <Route path="/admin/reservations" element={<Safe component={Reservations} name="Reservations" role="admin" />} />
+      <Route path="/admin/rent" element={<Safe component={RentPayments} name="RentPayments" role="admin" />} />
+      <Route path="/admin/utilities" element={<Safe component={UtilityCharges} name="UtilityCharges" role="admin" />} />
+      <Route path="/admin/expenses" element={<Safe component={Expenses} name="Expenses" role="admin" />} />
+      <Route path="/admin/analytics" element={<Safe component={Analytics} name="Analytics" role="admin" />} />
+      <Route path="/admin/announcements" element={<Safe component={Announcements} name="Announcements" role="admin" />} />
+      <Route path="/admin/settings" element={<Safe component={PaymentSettings} name="PaymentSettings" role="admin" />} />
+      <Route path="/admin/users" element={<Safe component={ManageUsers} name="ManageUsers" role="admin" />} />
 
-      {/* CARETAKER */}
-      <Route
-        path="/caretaker"
-        element={<Safe component={CaretakerDashboard} name="CaretakerDashboard" role="caretaker" />}
-      />
-      <Route
-        path="/caretaker/tenants"
-        element={<Safe component={ManageTenants} name="ManageTenants" role="caretaker" />}
-      />
-      <Route
-        path="/caretaker/reservations"
-        element={<Safe component={Reservations} name="Reservations" role="caretaker" />}
-      />
-      <Route
-        path="/caretaker/rent"
-        element={<Safe component={RentPayments} name="RentPayments" role="caretaker" />}
-      />
+      {/* ============ CARETAKER ============ */}
+      <Route path="/caretaker" element={<Safe component={CaretakerDashboard} name="CaretakerDashboard" role="caretaker" />} />
+      <Route path="/caretaker/tenants" element={<Safe component={ManageTenants} name="ManageTenants" role="caretaker" />} />
+      <Route path="/caretaker/reservations" element={<Safe component={Reservations} name="Reservations" role="caretaker" />} />
+      <Route path="/caretaker/rent" element={<Safe component={RentPayments} name="RentPayments" role="caretaker" />} />
 
-      {/* TENANT */}
-      <Route
-        path="/tenant"
-        element={<Safe component={TenantDashboard} name="TenantDashboard" role="tenant" />}
-      />
-      <Route
-        path="/tenant/pay"
-        element={<Safe component={PayBill} name="PayBill" role="tenant" />}
-      />
-      <Route
-        path="/tenant/pending/:id"
-        element={<Safe component={PaymentPending} name="PaymentPending" role="tenant" />}
-      />
-      <Route
-        path="/tenant/receipt/:id"
-        element={<Safe component={Receipt} name="Receipt" role="tenant" />}
-      />
+      {/* ============ TENANT ============ */}
+      <Route path="/tenant" element={<Safe component={TenantDashboard} name="TenantDashboard" role="tenant" />} />
+      <Route path="/tenant/bookings" element={<Safe component={MyBookings} name="MyBookings" role="tenant" />} />
+      <Route path="/tenant/pay" element={<Safe component={PayBill} name="PayBill" role="tenant" />} />
+      <Route path="/tenant/pending/:id" element={<Safe component={PaymentPending} name="PaymentPending" role="tenant" />} />
+      <Route path="/tenant/receipt/:id" element={<Safe component={Receipt} name="Receipt" role="tenant" />} />
+      <Route path="/tenant/favorites" element={<Safe component={Favorites} name="Favorites" role="tenant" />} />
+      <Route path="/tenant/messages" element={<Safe component={Messages} name="Messages" role="tenant" />} />
 
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* ============ FALLBACK ============ */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
 // ============================================================
-// ROOT APP
+// ROOT
 // ============================================================
 export default function App() {
   return (

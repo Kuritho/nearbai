@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, DoorOpen, Users, Pencil, Trash2, Search,
+  Plus, DoorOpen, Users, Pencil, Trash2, Search, Image as ImageIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/Modal';
+import ImageUploader from '../../components/ImageUploader';
 import { useToast } from '../../components/Toast';
 import { rooms as roomsDB, houses } from '../../services/localDB';
 
-const EMPTY = { roomNumber: '', bedCapacity: 4, monthlyRate: 0, notes: '' };
+const EMPTY = {
+  roomNumber: '',
+  bedCapacity: 4,
+  monthlyRate: 0,
+  gender: 'mixed',
+  notes: '',
+  imageUrl: '',
+};
 
 export default function ManageRooms() {
   const [rooms, setRooms] = useState([]);
@@ -16,20 +24,17 @@ export default function ManageRooms() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const toast = useToast();
 
   const load = () => {
-    const current = houses.current();
-    if (current) setRooms(roomsDB.list(current.id));
+    const c = houses.current();
+    if (c) setRooms(roomsDB.list(c.id));
   };
-
   useEffect(() => { load(); }, []);
 
   const openCreate = () => {
     setEditing(null);
     setForm(EMPTY);
-    setError('');
     setIsOpen(true);
   };
 
@@ -39,29 +44,29 @@ export default function ManageRooms() {
       roomNumber: room.roomNumber,
       bedCapacity: room.bedCapacity,
       monthlyRate: room.monthlyRate,
+      gender: room.gender || 'mixed',
       notes: room.notes || '',
+      imageUrl: room.imageUrl || '',
     });
-    setError('');
     setIsOpen(true);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
     try {
-      const current = houses.current();
+      const c = houses.current();
       if (editing) {
         roomsDB.update(editing.id, form);
         toast(`Room ${form.roomNumber} updated`, 'success');
       } else {
-        roomsDB.create({ houseId: current.id, ...form });
+        roomsDB.create({ houseId: c.id, ...form });
         toast(`Room ${form.roomNumber} created`, 'success');
       }
       setIsOpen(false);
       load();
     } catch (err) {
-      setError(err.message);
+      toast(err.message, 'error');
     } finally {
       setSaving(false);
     }
@@ -81,19 +86,15 @@ export default function ManageRooms() {
     }
   };
 
-  // ✅ SAFE filtering — uses roomNumber, handles undefined
   const filtered = rooms.filter((r) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
-    const num = (r.roomNumber || '').toString().toLowerCase();
-    const notes = (r.notes || '').toLowerCase();
-    return num.includes(q) || notes.includes(q);
+    return (r.roomNumber || '').toString().toLowerCase().includes(q);
   });
 
   const totalBeds = rooms.reduce((s, r) => s + (Number(r.bedCapacity) || 0), 0);
   const occupiedBeds = rooms.reduce((s, r) => s + (Number(r.occupants) || 0), 0);
-  const occupancyRate =
-    totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
   return (
     <div>
@@ -104,30 +105,28 @@ export default function ManageRooms() {
             {rooms.length} room{rooms.length !== 1 ? 's' : ''} · {occupiedBeds}/{totalBeds} beds filled
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreate}
-          className="btn-primary !px-4 !py-2.5 !min-h-0 text-sm"
-        >
+        <button onClick={openCreate} className="btn-primary !px-4 !py-2.5 !min-h-0 text-sm">
           <Plus size={16} className="mr-1.5" /> Add
-        </motion.button>
+        </button>
       </div>
 
       {/* Occupancy bar */}
       {rooms.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card-gradient mb-5">
-          <div className="flex items-center gap-4">
-            <CircularProgress value={occupancyRate} />
-            <div className="flex-1">
-              <p className="text-slate-600 text-xs font-bold uppercase tracking-wider">Occupancy Rate</p>
-              <p className="text-3xl font-extrabold text-slate-900 mt-1">{occupancyRate}%</p>
-              <p className="text-slate-500 text-xs mt-1">
-                {occupiedBeds} of {totalBeds} beds occupied
-              </p>
-            </div>
+        <div className="card-gradient mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-slate-600 text-xs font-bold uppercase tracking-wider">Occupancy Rate</p>
+            <p className="text-2xl font-extrabold text-slate-900">{occupancyRate}%</p>
           </div>
-        </motion.div>
+          <div className="w-full h-2.5 bg-white/60 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${occupancyRate}%` }}
+              transition={{ duration: 0.8 }}
+              className="h-full bg-gradient-to-r from-indigo-500 to-violet-600 rounded-full"
+            />
+          </div>
+          <p className="text-xs text-slate-500 mt-2">{occupiedBeds} of {totalBeds} beds occupied</p>
+        </div>
       )}
 
       {/* Search */}
@@ -141,21 +140,15 @@ export default function ManageRooms() {
         />
       </div>
 
-      {/* Room grid */}
+      {/* Grid */}
       {filtered.length === 0 ? (
         <div className="card text-center py-12">
-          <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="inline-flex w-16 h-16 rounded-2xl bg-indigo-50 items-center justify-center mb-4"
-          >
-            <DoorOpen size={28} className="text-indigo-500" />
-          </motion.div>
+          <DoorOpen size={40} className="mx-auto text-slate-300 mb-3" />
           <p className="text-slate-900 font-bold mb-1">
             {search ? 'No matching rooms' : 'No rooms yet'}
           </p>
           <p className="text-sm text-slate-500 mb-5">
-            {search ? 'Try a different search.' : 'Create your first room to get started.'}
+            {search ? 'Try a different search.' : 'Add your first room to get started.'}
           </p>
           {!search && (
             <button onClick={openCreate} className="btn-primary inline-flex">
@@ -164,7 +157,7 @@ export default function ManageRooms() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatePresence>
             {filtered.map((room, i) => {
               const full = room.occupants >= room.bedCapacity;
@@ -174,59 +167,62 @@ export default function ManageRooms() {
                   layout
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  exit={{ opacity: 0 }}
                   transition={{ delay: i * 0.03 }}
                   whileHover={{ y: -3 }}
-                  className="card"
+                  className="card !p-0 overflow-hidden"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                        full ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
-                      }`}>
-                        <DoorOpen size={18} strokeWidth={2.2} />
+                  {/* Image preview */}
+                  <div className="aspect-video bg-slate-100 relative">
+                    {room.imageUrl ? (
+                      <img
+                        src={room.imageUrl}
+                        alt={`Room ${room.roomNumber}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 flex flex-col items-center justify-center text-white/80">
+                        <ImageIcon size={32} className="mb-1" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">No photo</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-slate-900 text-base leading-tight">
-                          Room {room.roomNumber}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          ₱{Number(room.monthlyRate).toLocaleString('en-PH')}/mo
-                        </p>
-                      </div>
-                    </div>
-                    <span className={full ? 'chip-rose' : 'chip-emerald'}>
+                    )}
+                    <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded-full ${
+                      full ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
+                    }`}>
                       {full ? 'FULL' : 'OPEN'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-2">
-                    <Users size={14} />
-                    <span>{room.occupants} / {room.bedCapacity} beds</span>
-                  </div>
+                  {/* Info */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-bold text-slate-900">Room {room.roomNumber}</p>
+                        <p className="text-xs text-slate-500">
+                          ₱{Number(room.monthlyRate).toLocaleString('en-PH')}/mo · {room.gender}
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full mb-4 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (room.occupants / room.bedCapacity) * 100)}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className={`h-full rounded-full ${
-                        full ? 'bg-gradient-to-r from-rose-500 to-pink-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                      }`}
-                    />
-                  </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 mb-3">
+                      <Users size={13} />
+                      <span>{room.occupants} / {room.bedCapacity} beds</span>
+                    </div>
 
-                  {room.notes && (
-                    <p className="text-xs text-slate-500 mb-3 line-clamp-2">{room.notes}</p>
-                  )}
-
-                  <div className="flex gap-2">
-                    <button onClick={() => openEdit(room)} className="btn-secondary flex-1 !min-h-0 !py-2 text-sm">
-                      <Pencil size={14} className="mr-1.5" /> Edit
-                    </button>
-                    <button onClick={() => handleDelete(room)} className="btn-danger flex-1 !min-h-0 !py-2 text-sm">
-                      <Trash2 size={14} className="mr-1.5" /> Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEdit(room)}
+                        className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition"
+                      >
+                        <Pencil size={13} /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(room)}
+                        className="flex items-center justify-center text-sm py-2 px-3 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -241,12 +237,13 @@ export default function ManageRooms() {
         onClose={() => setIsOpen(false)}
         title={editing ? `Edit Room ${editing.roomNumber}` : 'Add New Room'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-xl text-sm animate-shake">
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Photo uploader */}
+          <ImageUploader
+            value={form.imageUrl}
+            onChange={(url) => setForm({ ...form, imageUrl: url })}
+            label="Room Photo"
+          />
 
           <div>
             <label className="label">Room Number</label>
@@ -279,9 +276,22 @@ export default function ManageRooms() {
           </div>
 
           <div>
+            <label className="label">Gender</label>
+            <select
+              className="input"
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            >
+              <option value="mixed">Mixed</option>
+              <option value="male">Male Only</option>
+              <option value="female">Female Only</option>
+            </select>
+          </div>
+
+          <div>
             <label className="label">Notes (optional)</label>
             <textarea
-              className="input" rows={3}
+              className="input" rows={2}
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="e.g. Air-conditioned, 2nd floor"
@@ -298,34 +308,6 @@ export default function ManageRooms() {
           </div>
         </form>
       </Modal>
-    </div>
-  );
-}
-
-function CircularProgress({ value }) {
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius;
-  const dashoffset = circumference - (value / 100) * circumference;
-
-  return (
-    <div className="relative w-20 h-20">
-      <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="none" />
-        <circle
-          cx="40"
-          cy="40"
-          r={radius}
-          stroke="#6366f1"
-          strokeWidth="8"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashoffset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-bold text-slate-900">{value}%</span>
-      </div>
     </div>
   );
 }
