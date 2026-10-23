@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, DoorOpen, Wallet, AlertTriangle, TrendingUp,
-  ArrowRight, Receipt, Wrench, Home, Clock,
+  ArrowRight, Receipt, Home, Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatCard from '../../components/StatCard';
@@ -219,11 +219,17 @@ function QuickAction({ icon: Icon, label, sub, color, onClick }) {
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className={`p-3 rounded-xl bg-gradient-to-br ${color} text-white shadow-lg text-left`}
+      className="text-left rounded-2xl bg-gradient-to-r p-[1px] shadow-sm hover:shadow-md transition"
     >
-      <Icon size={18} className="mb-2" />
-      <p className="font-bold text-sm">{label}</p>
-      <p className="text-[10px] opacity-80">{sub}</p>
+      <div className={`rounded-2xl bg-white/90 px-3 py-3 ${color}`}>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="p-2 rounded-xl bg-white/15 text-white">
+            <Icon size={16} />
+          </div>
+          <span className="text-white font-bold text-sm">{label}</span>
+        </div>
+        <p className="text-xs text-white/80">{sub}</p>
+      </div>
     </motion.button>
   );
 }

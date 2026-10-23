@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, Search, Trash2, Phone, AlertCircle, Home } from 'lucide-react';
+import { Plus, Users, Search, Trash2, Phone, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../../components/Modal';
 import StatusBadge from '../../components/StatusBadge';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, Search, Trash2, Shield } from 'lucide-react';
+import { Plus, Users, Trash2, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/Toast';
@@ -67,11 +67,6 @@ export default function ManageUsers() {
     toast('Account deleted', 'success');
     load();
   };
-
-  const filtered = users.filter((u) =>
-    u.name.toLowerCase().includes(form.email.toLowerCase()) ||
-    u.email.toLowerCase().includes(form.email.toLowerCase())
-  );
 
   return (
     <div>

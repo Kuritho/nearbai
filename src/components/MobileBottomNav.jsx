@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  LayoutDashboard, DoorOpen, Users, Wallet, TrendingUp, Receipt,
+  LayoutDashboard, DoorOpen, Users, Wallet, TrendingUp,
 } from 'lucide-react';
 
 export default function MobileBottomNav({ user }) {

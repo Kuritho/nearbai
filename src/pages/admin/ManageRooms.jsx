@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, DoorOpen, Users, Pencil, Trash2, Search, CheckCircle2, Home,
+  Plus, DoorOpen, Users, Pencil, Trash2, Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/Modal';
@@ -221,17 +221,11 @@ export default function ManageRooms() {
                   )}
 
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => openEdit(room)}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-semibold transition"
-                    >
-                      <Pencil size={13} /> Edit
+                    <button onClick={() => openEdit(room)} className="btn-secondary flex-1 !min-h-0 !py-2 text-sm">
+                      <Pencil size={14} className="mr-1.5" /> Edit
                     </button>
-                    <button
-                      onClick={() => handleDelete(room)}
-                      className="flex items-center justify-center text-sm py-2 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 transition"
-                    >
-                      <Trash2 size={13} />
+                    <button onClick={() => handleDelete(room)} className="btn-danger flex-1 !min-h-0 !py-2 text-sm">
+                      <Trash2 size={14} className="mr-1.5" /> Delete
                     </button>
                   </div>
                 </motion.div>
@@ -309,34 +303,28 @@ export default function ManageRooms() {
 }
 
 function CircularProgress({ value }) {
-  const radius = 32;
+  const radius = 28;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
+  const dashoffset = circumference - (value / 100) * circumference;
 
   return (
-    <div className="relative w-20 h-20 shrink-0">
-      <svg className="transform -rotate-90" width="80" height="80">
+    <div className="relative w-20 h-20">
+      <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
         <circle cx="40" cy="40" r={radius} stroke="#e2e8f0" strokeWidth="8" fill="none" />
-        <motion.circle
-          cx="40" cy="40" r={radius}
-          stroke="url(#progressGradient)"
+        <circle
+          cx="40"
+          cy="40"
+          r={radius}
+          stroke="#6366f1"
           strokeWidth="8"
           fill="none"
-          strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1, ease: 'easeOut' }}
+          strokeDashoffset={dashoffset}
+          strokeLinecap="round"
         />
-        <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#6366f1" />
-            <stop offset="100%" stopColor="#ec4899" />
-          </linearGradient>
-        </defs>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <Home size={20} className="text-indigo-500" />
+        <span className="text-sm font-bold text-slate-900">{value}%</span>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, Wallet, Search, CheckCircle2, FileText, Loader2,
+  Plus, Wallet, Search, CheckCircle2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../../components/Modal';

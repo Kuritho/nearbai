@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Upload, Loader2, CheckCircle2, AlertCircle, X, FileImage,
-  Copy, Check, ArrowRight, ArrowLeft, Smartphone, Info,
+  Upload, Loader2, CheckCircle2, AlertCircle, Copy, Check, ArrowLeft, Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { rentPayments, utilityCharges, settings as settingsDB } from '../../services/localDB';
@@ -221,150 +220,144 @@ export default function PayBill() {
                     <button
                       key={b.id}
                       onClick={() => toggleItem(b.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition ${
-                        isSel ? 'border-violet-400 bg-violet-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                      className={`w-full text-left rounded-xl border p-3 transition ${
+                        isSel ? 'border-violet-500 bg-violet-50' : 'border-slate-200 bg-white hover:bg-slate-50'
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
-                        isSel ? 'bg-violet-500 border-violet-500' : 'border-slate-300'
-                      }`}>
-                        {isSel && <CheckCircle2 size={12} className="text-white" strokeWidth={3} />}
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900">{b.label}</p>
+                          <p className="text-xs text-slate-500">₱{b.amount.toLocaleString('en-PH')}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 ${
+                          isSel ? 'bg-violet-600 border-violet-600' : 'border-slate-300'
+                        }`} />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-slate-900 text-sm capitalize">{b.label}</p>
-                      </div>
-                      <span className="font-bold text-slate-900 text-sm">₱{b.amount.toLocaleString('en-PH')}</span>
                     </button>
                   );
                 })}
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center">
-                <p className="text-xs text-slate-500">{selected.length} selected</p>
-                <p className="text-xl font-bold text-slate-900">₱{total.toLocaleString('en-PH')}</p>
-              </div>
             </div>
 
             <div className="card">
-              <h2 className="font-bold text-slate-900 mb-1">Step 1 — Choose payment method</h2>
-              <p className="text-xs text-slate-500 mb-4">Pick where you sent the money.</p>
-              <div className="grid grid-cols-2 gap-3">
-                {PAYMENT_METHODS.map((m) => {
-                  const acct = ownerAccounts?.[m.id];
-                  const disabled = !acct?.enabled || (m.id === 'gcash' && !acct?.phone) || (m.id === 'bank' && !acct?.accountNumber);
-                  return (
-                    <motion.button
-                      key={m.id}
-                      whileHover={!disabled ? { y: -3 } : {}}
-                      whileTap={!disabled ? { scale: 0.97 } : {}}
-                      onClick={() => !disabled && handleChooseMethod(m.id)}
-                      disabled={disabled || !selected.length}
-                      className={`relative p-4 rounded-xl border-2 text-left transition disabled:opacity-40 ${
-                        disabled ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white hover:border-violet-400'
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${m.grad} flex items-center justify-center shadow-lg mb-2 text-2xl`}>
+              <h2 className="font-bold text-slate-900 mb-3">Choose payment method</h2>
+              <div className="space-y-3">
+                {PAYMENT_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => handleChooseMethod(m.id)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left hover:border-violet-300 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${m.grad} flex items-center justify-center text-2xl`}>
                         {m.emoji}
                       </div>
-                      <p className="font-bold text-slate-900 text-sm">{m.label}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{disabled ? 'Not available' : m.sub}</p>
-                    </motion.button>
-                  );
-                })}
+                      <div>
+                        <p className="font-bold text-slate-900">{m.label}</p>
+                        <p className="text-xs text-slate-500">{m.sub}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </motion.div>
         )}
 
-        {step === 2 && activeAccount && (
-          <motion.div key="step2" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-            <button onClick={handleBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-violet-600 hover:text-violet-700">
-              <ArrowLeft size={16} /> Back
-            </button>
-
-            <div className="card-gradient">
-              <p className="text-slate-600 text-xs font-bold uppercase tracking-wider">Amount to send</p>
-              <p className="text-3xl font-bold text-slate-900 mt-1">₱{total.toLocaleString('en-PH')}</p>
-              <p className="text-slate-600 text-xs mt-1">
-                {selected.length} bill{selected.length !== 1 ? 's' : ''} · via {PAYMENT_METHODS.find((m) => m.id === method)?.label}
-              </p>
-            </div>
-
+        {step === 2 && (
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="space-y-4"
+          >
             <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 rounded-lg bg-violet-100 border border-violet-200">
-                  <Smartphone size={18} className="text-violet-600" />
-                </div>
-                <h2 className="font-bold text-slate-900">Send to the owner's account</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-slate-900">Payment details</h2>
+                <button onClick={handleBack} className="text-xs font-medium text-slate-500 hover:text-slate-700">Back</button>
               </div>
 
-              <div className="space-y-2">
-                {method === 'gcash' && (
-                  <>
-                    <CopyRow label="Account Name" value={activeAccount.accountName || '—'} copied={copiedField === 'name'} onCopy={() => copyToClipboard(activeAccount.accountName, 'name')} />
-                    <CopyRow label="GCash Number" value={activeAccount.phone || '—'} mono copied={copiedField === 'phone'} onCopy={() => copyToClipboard(activeAccount.phone, 'phone')} />
-                  </>
-                )}
-                {method === 'bank' && (
-                  <>
-                    <CopyRow label="Bank" value={activeAccount.bankName || '—'} />
-                    <CopyRow label="Account Name" value={activeAccount.accountName || '—'} />
-                    <CopyRow label="Account Number" value={activeAccount.accountNumber || '—'} mono copied={copiedField === 'acc'} onCopy={() => copyToClipboard(activeAccount.accountNumber, 'acc')} />
-                  </>
-                )}
-              </div>
-
-              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-                <Info size={14} className="text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-[11px] text-amber-800">
-                  Send exactly <strong>₱{total.toLocaleString('en-PH')}</strong>, then upload your receipt below.
-                </p>
-              </div>
-            </div>
-
-            <div className="card">
-              <h2 className="font-bold text-slate-900 mb-1">Step 2 — Upload your receipt</h2>
-              <p className="text-xs text-slate-500 mb-4">Screenshot the confirmation from your app.</p>
-
-              {!ocrPreview ? (
-                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-8 cursor-pointer hover:border-violet-400 hover:bg-violet-50/30 transition">
-                  <Upload size={22} className="text-violet-600 mb-2" />
-                  <span className="text-sm font-semibold text-slate-900">Tap to upload screenshot</span>
-                  <span className="text-[11px] text-slate-500 mt-0.5">PNG, JPG</span>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleOCRUpload} className="hidden" />
-                </label>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <img src={ocrPreview} alt="Receipt" className="w-full max-h-48 object-cover rounded-xl border border-slate-200" />
-                    <button onClick={clearProof} className="absolute top-2 right-2 bg-white p-1.5 rounded-full shadow-lg border border-slate-200">
-                      <X size={14} className="text-slate-600" />
-                    </button>
+              {activeAccount && (
+                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <Smartphone size={16} /> {method === 'gcash' ? 'GCash' : 'Bank'} account
                   </div>
-                  {ocrLoading && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                      <Loader2 className="animate-spin" size={14} /> Reading receipt…
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Name</span>
+                      <span className="font-semibold text-slate-900">{activeAccount.name}</span>
                     </div>
-                  )}
-                  {ocrText && !ocrLoading && (
-                    <>
-                      <div>
-                        <label className="label">Reference Number</label>
-                        <input className="input" value={manualRef} onChange={(e) => setManualRef(e.target.value)} placeholder="e.g. 1234567890" />
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Number</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-slate-900">{activeAccount.number}</span>
+                        <button onClick={() => copyToClipboard(activeAccount.number, 'number')} className="p-1 rounded-md hover:bg-slate-200">
+                          {copiedField === 'number' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} className="text-slate-500" />}
+                        </button>
                       </div>
-                      <div>
-                        <label className="label">Amount Sent</label>
-                        <input type="number" className="input" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="0.00" />
-                      </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
               )}
+
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleOCRUpload} className="hidden" />
+                <button onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left hover:border-violet-300 transition">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">Upload receipt</p>
+                      <p className="text-xs text-slate-500">PNG/JPG screenshot or photo</p>
+                    </div>
+                    <div className="p-2 rounded-xl bg-violet-100 text-violet-600">
+                      <Upload size={18} />
+                    </div>
+                  </div>
+                </button>
+
+                {ocrLoading && (
+                  <div className="mt-3 flex items-center text-sm text-slate-500">
+                    <Loader2 size={16} className="animate-spin mr-2" /> Reading receipt…
+                  </div>
+                )}
+
+                {ocrPreview && (
+                  <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-white">
+                    <img src={ocrPreview} alt="Receipt preview" className="w-full h-52 object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="label">Reference number</label>
+                  <input value={manualRef} onChange={(e) => setManualRef(e.target.value)} className="input" placeholder="Enter reference number" />
+                </div>
+                <div>
+                  <label className="label">Amount paid</label>
+                  <input value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} className="input" placeholder="Amount sent" />
+                </div>
+                {ocrText && (
+                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Detected text</p>
+                      <button onClick={() => copyToClipboard(ocrText, 'ocr')} className="text-[11px] text-violet-600 font-medium">Copy</button>
+                    </div>
+                    <pre className="text-[11px] leading-5 text-slate-600 whitespace-pre-wrap max-h-32 overflow-auto">{ocrText}</pre>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <button onClick={handleSubmit} disabled={submitting || !ocrPreview} className="btn-success w-full">
-              {submitting ? <Loader2 className="animate-spin mr-2" size={18} /> : <FileImage className="mr-2" size={18} />}
-              Submit Payment
-            </button>
+            <div className="card">
+              <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
+                <span>Selected bills total</span>
+                <span className="font-bold text-slate-900">₱{total.toLocaleString('en-PH')}</span>
+              </div>
+              <button onClick={handleSubmit} disabled={submitting} className="btn-primary w-full">
+                {submitting ? 'Submitting…' : 'Submit Payment'}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -374,31 +367,13 @@ export default function PayBill() {
 
 function StepPill({ n, label, active, done }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-        done ? 'bg-emerald-500 text-white'
-        : active ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white'
-        : 'bg-slate-100 text-slate-500 border border-slate-200'
-      }`}>
-        {done ? <Check size={14} strokeWidth={3} /> : n}
-      </div>
-      <span className={`text-xs font-semibold ${active ? 'text-slate-900' : 'text-slate-500'}`}>{label}</span>
-    </div>
-  );
-}
-
-function CopyRow({ label, value, mono, copied, onCopy }) {
-  return (
-    <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className={`font-bold text-slate-900 truncate ${mono ? 'font-mono text-base tracking-wider' : 'text-sm'}`}>{value}</p>
-      </div>
-      {onCopy && (
-        <button onClick={onCopy} className={`p-2 rounded-lg border ${copied ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-white text-slate-600 border-slate-200'}`}>
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-        </button>
-      )}
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold ${
+      active ? 'border-violet-500 bg-violet-50 text-violet-700' : done ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500'
+    }`}>
+      <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center ${
+        active ? 'bg-violet-600 text-white' : done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+      }`}>{n}</span>
+      {label}
     </div>
   );
 }

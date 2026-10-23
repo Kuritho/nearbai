@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Download } from 'lucide-react';
-import { rentPayments } from '../../services/localDB';
 import { downloadReceipt } from '../../services/pdfService';
 
 export default function Receipt() {
@@ -19,15 +18,15 @@ export default function Receipt() {
   return (
     <div className="max-w-md mx-auto">
       <div ref={receiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-<div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-6 text-white">
-  <div className="flex items-center justify-between mb-3">
-    <p className="text-sm font-bold tracking-tight">NearBai</p>
-    <p className="text-[10px] uppercase tracking-wider opacity-80">Official Receipt</p>
-  </div>
-  <p className="text-xs font-semibold uppercase opacity-80 mb-1">Total Paid</p>
-  <p className="text-4xl font-bold">₱{payment.amountPaid.toLocaleString('en-PH')}</p>
-  <p className="text-xs mt-1 font-mono">{payment.orNumber || '—'}</p>
-</div>
+        <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-6 text-white">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold tracking-tight">NearBai</p>
+            <p className="text-[10px] uppercase tracking-wider opacity-80">Official Receipt</p>
+          </div>
+          <p className="text-xs font-semibold uppercase opacity-80 mb-1">Total Paid</p>
+          <p className="text-4xl font-bold">₱{payment.amountPaid.toLocaleString('en-PH')}</p>
+          <p className="text-xs mt-1 font-mono">{payment.orNumber || '—'}</p>
+        </div>
         <div className="p-6 space-y-3 text-sm">
           <Row label="Billing Month" value={payment.billingMonth} />
           <Row label="Amount Due" value={`₱${payment.amountDue.toLocaleString('en-PH')}`} />

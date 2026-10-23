@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { animate } from 'framer-motion';
 
 export default function AnimatedNumber({ value, prefix = '', suffix = '', duration = 1 }) {
   const numericValue = typeof value === 'number' ? value : parseFloat(String(value).replace(/[^0-9.-]/g, '')) || 0;
