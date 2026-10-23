@@ -90,7 +90,7 @@ export default function Login() {
         </div>
 
         <p className="relative z-10 text-xs text-white/60">
-          © 2026 NearBai · Made for Filipino landlords
+          © 2026 NearBai · Made by BSIE USM-KCC for Filipino landlords
         </p>
       </div>
 
