@@ -28,7 +28,6 @@ import Analytics from './pages/admin/Analytics';
 import PaymentSettings from './pages/admin/PaymentSettings';
 import ManageUsers from './pages/admin/ManageUsers';
 import Announcements from './pages/admin/Announcements';
-import AdminMessages from './pages/admin/AdminMessages'; // <-- NEW
 
 // ─── Caretaker ───
 import CaretakerDashboard from './pages/caretaker/CaretakerDashboard';
@@ -40,10 +39,9 @@ import PaymentPending from './pages/tenant/PaymentPending';
 import Receipt from './pages/tenant/Receipt';
 import MyBookings from './pages/tenant/MyBookings';
 import Favorites from './pages/tenant/Favorites';
-import Messages from './pages/tenant/Messages';
 
 // ============================================================
-// IMPORT SANITY CHECK — logs any missing page to the console
+// IMPORT SANITY CHECK
 // ============================================================
 const PAGE_IMPORTS = {
   Login,
@@ -51,10 +49,10 @@ const PAGE_IMPORTS = {
   SignupPage, ReservePage, ReserveSuccess,
   AdminDashboard, ManageProperties, ManageRooms, ManageTenants,
   Reservations, RentPayments, UtilityCharges, Expenses, Analytics,
-  PaymentSettings, ManageUsers, Announcements, AdminMessages,
+  PaymentSettings, ManageUsers, Announcements,
   CaretakerDashboard,
   TenantDashboard, PayBill, PaymentPending, Receipt,
-  MyBookings, Favorites, Messages,
+  MyBookings, Favorites,
   Layout,
 };
 
@@ -76,7 +74,7 @@ const PAGE_IMPORTS = {
 })();
 
 // ============================================================
-// ERROR BOUNDARY — shows a clean screen if a page crashes
+// ERROR BOUNDARY
 // ============================================================
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -99,8 +97,7 @@ class ErrorBoundary extends Component {
             </div>
             <h1 className="text-xl font-extrabold text-slate-900 mb-2">Something went wrong</h1>
             <p className="text-sm text-slate-600 mb-4">
-              A page failed to load. This is usually caused by a missing file or a
-              broken import. Check the browser console for details.
+              A page failed to load. Check the browser console for details.
             </p>
             <pre className="bg-slate-50 p-3 rounded-xl text-[10px] text-rose-700 overflow-auto max-h-40 whitespace-pre-wrap mb-4">
               {String(this.state.error)}
@@ -129,7 +126,7 @@ function MissingPage({ name }) {
         </div>
         <h1 className="text-xl font-extrabold text-slate-900 mb-2">Page unavailable</h1>
         <p className="text-sm text-slate-600 mb-4">
-          The <strong>{name}</strong> page hasn't been created yet, or its file doesn't have a <code className="bg-slate-100 px-1 rounded">export default</code>.
+          The <strong>{name}</strong> page hasn't been created yet.
         </p>
         <button onClick={() => window.history.back()} className="btn-secondary mt-2">← Go back</button>
       </div>
@@ -173,7 +170,7 @@ function ProtectedRoute({ children, role }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* ============ PUBLIC (no login) ============ */}
+      {/* ============ PUBLIC ============ */}
       <Route path="/" element={<Safe component={LandingPage} name="LandingPage" />} />
       <Route path="/browse" element={<Safe component={BrowsePage} name="BrowsePage" />} />
       <Route path="/browse/:id" element={<Safe component={PropertyDetail} name="PropertyDetail" />} />
@@ -195,7 +192,6 @@ function AppRoutes() {
       <Route path="/admin/expenses" element={<Safe component={Expenses} name="Expenses" role="admin" />} />
       <Route path="/admin/analytics" element={<Safe component={Analytics} name="Analytics" role="admin" />} />
       <Route path="/admin/announcements" element={<Safe component={Announcements} name="Announcements" role="admin" />} />
-      <Route path="/admin/messages" element={<Safe component={AdminMessages} name="AdminMessages" role="admin" />} />
       <Route path="/admin/settings" element={<Safe component={PaymentSettings} name="PaymentSettings" role="admin" />} />
       <Route path="/admin/users" element={<Safe component={ManageUsers} name="ManageUsers" role="admin" />} />
 
@@ -212,7 +208,6 @@ function AppRoutes() {
       <Route path="/tenant/pending/:id" element={<Safe component={PaymentPending} name="PaymentPending" role="tenant" />} />
       <Route path="/tenant/receipt/:id" element={<Safe component={Receipt} name="Receipt" role="tenant" />} />
       <Route path="/tenant/favorites" element={<Safe component={Favorites} name="Favorites" role="tenant" />} />
-      <Route path="/tenant/messages" element={<Safe component={Messages} name="Messages" role="tenant" />} />
 
       {/* ============ FALLBACK ============ */}
       <Route path="*" element={<Navigate to="/" replace />} />
