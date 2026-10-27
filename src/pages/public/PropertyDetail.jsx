@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  MapPin, Building2, DoorOpen, ArrowLeft, ArrowRight, Heart, Users,
+  MapPin, Building2, DoorOpen, ArrowLeft, ArrowRight, Heart,
 } from 'lucide-react';
 import PublicNavbar from './PublicNavbar';
 import BedPicker from './BedPicker';
