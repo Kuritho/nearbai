@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Building2, DoorOpen, Users, Wallet, Receipt,
   TrendingUp, LogOut, Settings, Wrench, Shield, Clock, Megaphone,
-  Heart, MessageSquare,
+  MessageSquare, Heart, // <-- Heart added here
 } from 'lucide-react';
 import Logo from './Logo';
 import PropertySwitcher from './PropertySwitcher';
@@ -23,6 +23,7 @@ export default function Sidebar() {
     { to: '/admin/expenses', icon: Wrench, label: 'Expenses' },
     { to: '/admin/analytics', icon: TrendingUp, label: 'Analytics' },
     { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
+    { to: '/admin/messages', icon: MessageSquare, label: 'Messages' },
     { to: '/admin/settings', icon: Settings, label: 'Payment Settings' },
     { to: '/admin/users', icon: Shield, label: 'Manage Users' },
   ];
