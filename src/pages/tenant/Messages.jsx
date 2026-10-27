@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Send, Plus, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { messages, houses } from '../../services/localDB';
@@ -11,8 +11,8 @@ export default function Messages() {
   const [form, setForm] = useState({ houseId: '', subject: '', body: '' });
   const [reply, setReply] = useState('');
 
-  const load = () => setList(messages.listForTenant(user.id));
-  useEffect(() => { load(); }, [user.id]);
+  const load = useCallback(() => setList(messages.listForTenant(user.id)), [user.id]);
+  useEffect(() => { load(); }, [load]);
 
   const handleSend = (e) => {
     e.preventDefault();
