@@ -16,7 +16,7 @@ const KEYS = {
   ANNOUNCEMENTS: 'nb_announcements',
   BOOKINGS: 'nb_bookings',
   FAVORITES: 'nb_favorites',
-  MESSAGES: 'nb_messages',
+  // MESSAGES: 'nb_messages', <-- REMOVED
 };
 
 const read = (key, fallback = []) => {
@@ -485,12 +485,10 @@ export const settings = {
 
 // ================= RESERVATIONS (guest requests + tenant bookings) =================
 export const reservations = {
-  // Merge both guest requests AND tenant bookings into one list for Admin
   list(houseId) {
     const allRooms = read(KEYS.ROOMS);
     const tenantsArr = read(KEYS.TENANTS);
     
-    // 1. Get Guest Reservations (from the public /reserve page)
     const guestReqs = read(KEYS.RESERVATIONS).map((r) => {
       const room = allRooms.find((rm) => rm.id === r.roomId);
       return {
@@ -503,7 +501,6 @@ export const reservations = {
       };
     });
 
-    // 2. Get Tenant Bookings (from the interactive bed picker)
     const tenantBookings = read(KEYS.BOOKINGS).map((b) => {
       const room = allRooms.find((rm) => rm.id === b.roomId);
       const tenant = tenantsArr.find((t) => t.id === b.tenantId);
@@ -521,7 +518,6 @@ export const reservations = {
       };
     });
 
-    // 3. Combine and filter by houseId
     return [...guestReqs, ...tenantBookings]
       .filter((r) => !houseId || r.houseId === houseId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -778,54 +774,6 @@ export const favorites = {
   },
 };
 
-// ================= MESSAGES =================
-export const messages = {
-  listForTenant(tenantId) {
-    return read(KEYS.MESSAGES)
-      .filter((m) => m.tenantId === tenantId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  },
-  listForHouse(houseId) {
-    const tenantsArr = read(KEYS.TENANTS);
-    return read(KEYS.MESSAGES)
-      .filter((m) => !houseId || m.houseId === houseId)
-      .map((m) => {
-        const tenant = tenantsArr.find((t) => t.id === m.tenantId);
-        return {
-          ...m,
-          tenantName: tenant?.name || 'Unknown Tenant',
-          tenantEmail: tenant?.email || '',
-        };
-      })
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  },
-  send({ tenantId, houseId, subject, body }) {
-    const all = read(KEYS.MESSAGES);
-    const msg = {
-      id: uid(),
-      tenantId,
-      houseId,
-      subject,
-      body,
-      status: 'unread',
-      replies: [],
-      createdAt: new Date().toISOString(),
-    };
-    all.push(msg);
-    write(KEYS.MESSAGES, all);
-    return msg;
-  },
-  reply(messageId, { fromRole, body }) {
-    const all = read(KEYS.MESSAGES);
-    const idx = all.findIndex((m) => m.id === messageId);
-    if (idx < 0) throw new Error('Message not found');
-    all[idx].replies.push({ fromRole, body, at: new Date().toISOString() });
-    all[idx].status = fromRole === 'admin' ? 'replied' : 'unread';
-    write(KEYS.MESSAGES, all);
-    return all[idx];
-  },
-};
-
 // ================= ANALYTICS =================
 export const analytics = {
   dashboard(houseId) {
@@ -835,7 +783,6 @@ export const analytics = {
     const utils = utilityCharges.listForHouse(houseId);
     const exp = expenses.list(houseId);
     
-    // Get both guest reservations and tenant bookings for the dashboard alert
     const pendingRes = reservations.list(houseId).filter((r) => r.status === 'pending').length;
 
     const occupiedBeds = tenantsArr.filter((t) => t.status === 'occupied').length;
