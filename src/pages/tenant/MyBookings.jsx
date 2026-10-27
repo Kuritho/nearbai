@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, CheckCircle2, XCircle, Home, Building2 } from 'lucide-react';
+import { Clock, Building2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
 import { bookings, houses } from '../../services/localDB';
@@ -9,7 +9,7 @@ export default function MyBookings() {
   const { user } = useAuth();
   const [list, setList] = useState([]);
 
-  const load = () => {
+  const load = useCallback(() => {
     const all = bookings.listForTenant(user.id);
     const allHouses = houses.list();
     setList(all.map((b) => {
@@ -17,9 +17,9 @@ export default function MyBookings() {
       const house = allHouses.find((h) => h.id === room?.houseId);
       return { ...b, house };
     }));
-  };
+  }, [user.id]);
 
-  useEffect(() => { load(); }, [user.id]);
+  useEffect(() => { load(); }, [load]);
 
   const handleCancel = (id) => {
     if (!window.confirm('Cancel this booking?')) return;
