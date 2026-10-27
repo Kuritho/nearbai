@@ -483,23 +483,50 @@ export const settings = {
   },
 };
 
-// ================= RESERVATIONS =================
+// ================= RESERVATIONS (guest requests + tenant bookings) =================
 export const reservations = {
+  // Merge both guest requests AND tenant bookings into one list for Admin
   list(houseId) {
     const allRooms = read(KEYS.ROOMS);
-    return read(KEYS.RESERVATIONS)
-      .map((r) => {
-        const room = allRooms.find((rm) => rm.id === r.roomId);
-        return {
-          ...r,
-          roomNumber: room?.roomNumber || '—',
-          roomRate: room?.monthlyRate || 0,
-          houseId: room?.houseId || null,
-        };
-      })
+    const tenantsArr = read(KEYS.TENANTS);
+    
+    // 1. Get Guest Reservations (from the public /reserve page)
+    const guestReqs = read(KEYS.RESERVATIONS).map((r) => {
+      const room = allRooms.find((rm) => rm.id === r.roomId);
+      return {
+        ...r,
+        type: 'guest', 
+        roomNumber: room?.roomNumber || '—',
+        roomRate: room?.monthlyRate || 0,
+        houseId: room?.houseId || null,
+        tenantName: r.fullName, 
+      };
+    });
+
+    // 2. Get Tenant Bookings (from the interactive bed picker)
+    const tenantBookings = read(KEYS.BOOKINGS).map((b) => {
+      const room = allRooms.find((rm) => rm.id === b.roomId);
+      const tenant = tenantsArr.find((t) => t.id === b.tenantId);
+      return {
+        ...b,
+        type: 'booking', 
+        fullName: tenant?.name || b.guestName || 'Unknown',
+        phone: tenant?.phone || b.guestPhone || '—',
+        email: tenant?.email || '—',
+        roomNumber: room?.roomNumber || '—',
+        roomRate: room?.monthlyRate || 0,
+        houseId: room?.houseId || null,
+        tenantName: tenant?.name || b.guestName || 'Unknown',
+        bedNumber: b.bedNumber,
+      };
+    });
+
+    // 3. Combine and filter by houseId
+    return [...guestReqs, ...tenantBookings]
       .filter((r) => !houseId || r.houseId === houseId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
+
   create({ houseId, roomId, fullName, phone, email, moveInDate, notes }) {
     if (!houseId || !roomId || !fullName || !phone) {
       throw new Error('Please fill in all required fields.');
@@ -536,7 +563,12 @@ export const reservations = {
     write(KEYS.RESERVATIONS, all);
     return reservation;
   },
-  approve(id, password) {
+
+  approve(id, password, type = 'guest') {
+    if (type === 'booking') {
+      return bookings.approve(id, password);
+    }
+    
     const all = read(KEYS.RESERVATIONS);
     const idx = all.findIndex((r) => r.id === id);
     if (idx < 0) throw new Error('Reservation not found');
@@ -558,7 +590,12 @@ export const reservations = {
     write(KEYS.RESERVATIONS, all);
     return res;
   },
-  reject(id, reason) {
+
+  reject(id, reason, type = 'guest') {
+    if (type === 'booking') {
+      return bookings.reject(id, reason);
+    }
+    
     const all = read(KEYS.RESERVATIONS);
     const idx = all.findIndex((r) => r.id === id);
     if (idx < 0) throw new Error('Reservation not found');
@@ -568,6 +605,7 @@ export const reservations = {
     write(KEYS.RESERVATIONS, all);
     return all[idx];
   },
+
   getByReference(ref) {
     return read(KEYS.RESERVATIONS).find((r) => r.reference === ref) || null;
   },
@@ -599,7 +637,7 @@ export const announcements = {
   },
 };
 
-// ================= BOOKINGS =================
+// ================= BOOKINGS (interactive bed reservation) =================
 export const bookings = {
   list(houseId) {
     const allRooms = read(KEYS.ROOMS);
@@ -748,8 +786,17 @@ export const messages = {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
   listForHouse(houseId) {
+    const tenantsArr = read(KEYS.TENANTS);
     return read(KEYS.MESSAGES)
-      .filter((m) => m.houseId === houseId)
+      .filter((m) => !houseId || m.houseId === houseId)
+      .map((m) => {
+        const tenant = tenantsArr.find((t) => t.id === m.tenantId);
+        return {
+          ...m,
+          tenantName: tenant?.name || 'Unknown Tenant',
+          tenantEmail: tenant?.email || '',
+        };
+      })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
   send({ tenantId, houseId, subject, body }) {
@@ -773,7 +820,7 @@ export const messages = {
     const idx = all.findIndex((m) => m.id === messageId);
     if (idx < 0) throw new Error('Message not found');
     all[idx].replies.push({ fromRole, body, at: new Date().toISOString() });
-    all[idx].status = fromRole === 'admin' ? 'read' : 'unread';
+    all[idx].status = fromRole === 'admin' ? 'replied' : 'unread';
     write(KEYS.MESSAGES, all);
     return all[idx];
   },
@@ -787,8 +834,9 @@ export const analytics = {
     const rents = rentPayments.listForHouse(houseId);
     const utils = utilityCharges.listForHouse(houseId);
     const exp = expenses.list(houseId);
+    
+    // Get both guest reservations and tenant bookings for the dashboard alert
     const pendingRes = reservations.list(houseId).filter((r) => r.status === 'pending').length;
-    const pendingBkgs = bookings.list(houseId).filter((b) => b.status === 'pending').length;
 
     const occupiedBeds = tenantsArr.filter((t) => t.status === 'occupied').length;
     const totalCapacity = allRooms.reduce((s, r) => s + r.bedCapacity, 0);
@@ -825,7 +873,6 @@ export const analytics = {
       unpaid,
       overdue,
       pendingReservations: pendingRes,
-      pendingBookings: pendingBkgs,
       recentRent: rents.slice(0, 5),
     };
   },
