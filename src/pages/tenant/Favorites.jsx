@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Building2, MapPin } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -8,8 +8,8 @@ export default function Favorites() {
   const { user } = useAuth();
   const [list, setList] = useState([]);
 
-  const load = () => setList(favorites.list(user.id));
-  useEffect(() => { load(); }, [user.id]);
+  const load = useCallback(() => setList(favorites.list(user.id)), [user.id]);
+  useEffect(() => { load(); }, [load]);
 
   const remove = (houseId) => {
     favorites.toggle(user.id, houseId);
