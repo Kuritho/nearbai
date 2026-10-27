@@ -21,6 +21,7 @@ export default function Announcements() {
     const c = houses.current();
     if (c) setList(announcements.list(c.id));
   };
+
   useEffect(() => { load(); }, []);
 
   const handleSubmit = (e) => {
@@ -28,13 +29,18 @@ export default function Announcements() {
     setSaving(true);
     try {
       const c = houses.current();
+      if (!c) throw new Error("No active property selected");
+      
       announcements.create({ houseId: c.id, ...form });
       toast('Announcement posted', 'success');
       setIsOpen(false);
       setForm({ title: '', body: '', priority: 'normal' });
       load();
-    } catch (err) { toast(err.message, 'error'); }
-    finally { setSaving(false); }
+    } catch (err) { 
+      toast(err.message, 'error'); 
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const handleDelete = (id) => {
