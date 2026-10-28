@@ -1,5 +1,4 @@
 // src/services/localDB.js — NearBai Information System
-// LocalStorage-backed "database" matching the proposal's normalized schema.
 
 const KEYS = {
   USERS: 'nb_users',
@@ -16,7 +15,6 @@ const KEYS = {
   ANNOUNCEMENTS: 'nb_announcements',
   BOOKINGS: 'nb_bookings',
   FAVORITES: 'nb_favorites',
-  // MESSAGES: 'nb_messages', <-- REMOVED
 };
 
 const read = (key, fallback = []) => {
@@ -108,57 +106,30 @@ export const auth = {
 
 // ================= PROPERTY =================
 export const houses = {
-  list() {
-    return read(KEYS.HOUSES);
-  },
-  get(id) {
-    return read(KEYS.HOUSES).find((h) => h.id === id);
-  },
+  list() { return read(KEYS.HOUSES); },
+  get(id) { return read(KEYS.HOUSES).find((h) => h.id === id); },
   create({ name, address, contactNumber, imageUrl }) {
     const all = read(KEYS.HOUSES);
-    const house = {
-      id: uid(),
-      name,
-      address: address || '',
-      contactNumber: contactNumber || '',
-      imageUrl: imageUrl || '',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(house);
-    write(KEYS.HOUSES, all);
-    return house;
+    const house = { id: uid(), name, address: address || '', contactNumber: contactNumber || '', imageUrl: imageUrl || '', createdAt: new Date().toISOString() };
+    all.push(house); write(KEYS.HOUSES, all); return house;
   },
   update(id, changes) {
     const all = read(KEYS.HOUSES);
     const idx = all.findIndex((h) => h.id === id);
     if (idx < 0) throw new Error('Property not found');
-    all[idx] = { ...all[idx], ...changes };
-    write(KEYS.HOUSES, all);
-    return all[idx];
+    all[idx] = { ...all[idx], ...changes }; write(KEYS.HOUSES, all); return all[idx];
   },
   remove(id) {
     const roomsArr = read(KEYS.ROOMS).filter((r) => r.houseId === id);
-    if (roomsArr.length > 0) {
-      throw new Error(`Property has ${roomsArr.length} room(s). Delete rooms first.`);
-    }
-    write(KEYS.HOUSES, read(KEYS.HOUSES).filter((h) => h.id !== id));
-    return true;
+    if (roomsArr.length > 0) throw new Error(`Property has ${roomsArr.length} room(s). Delete rooms first.`);
+    write(KEYS.HOUSES, read(KEYS.HOUSES).filter((h) => h.id !== id)); return true;
   },
   current() {
     const id = read(KEYS.CURRENT_HOUSE, null);
-    if (!id) {
-      const first = read(KEYS.HOUSES)[0];
-      if (first) {
-        write(KEYS.CURRENT_HOUSE, first.id);
-        return first;
-      }
-      return null;
-    }
+    if (!id) { const first = read(KEYS.HOUSES)[0]; if (first) { write(KEYS.CURRENT_HOUSE, first.id); return first; } return null; }
     return houses.get(id);
   },
-  setCurrent(id) {
-    write(KEYS.CURRENT_HOUSE, id);
-  },
+  setCurrent(id) { write(KEYS.CURRENT_HOUSE, id); },
 };
 
 // ================= ROOMS =================
@@ -168,56 +139,28 @@ export const rooms = {
     const tenantList = read(KEYS.TENANTS);
     const filtered = houseId ? allRooms.filter((r) => r.houseId === houseId) : allRooms;
     return filtered.map((r) => {
-      const occupants = tenantList.filter(
-        (t) => t.roomId === r.id && t.status === 'occupied'
-      ).length;
+      const occupants = tenantList.filter((t) => t.roomId === r.id && t.status === 'occupied').length;
       return { ...r, occupants };
     });
   },
-
   create({ houseId, roomNumber, bedCapacity, monthlyRate, notes, gender, imageUrl }) {
     const all = read(KEYS.ROOMS);
-    if (all.find((r) => r.houseId === houseId && r.roomNumber === roomNumber)) {
-      throw new Error(`Room ${roomNumber} already exists`);
-    }
-    const room = {
-      id: uid(),
-      houseId,
-      roomNumber,
-      bedCapacity: Number(bedCapacity),
-      monthlyRate: Number(monthlyRate) || 0,
-      gender: gender || 'mixed',
-      notes: notes || '',
-      imageUrl: imageUrl || '',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(room);
-    write(KEYS.ROOMS, all);
-    return room;
+    if (all.find((r) => r.houseId === houseId && r.roomNumber === roomNumber)) throw new Error(`Room ${roomNumber} already exists`);
+    const room = { id: uid(), houseId, roomNumber, bedCapacity: Number(bedCapacity), monthlyRate: Number(monthlyRate) || 0, gender: gender || 'mixed', notes: notes || '', imageUrl: imageUrl || '', createdAt: new Date().toISOString() };
+    all.push(room); write(KEYS.ROOMS, all); return room;
   },
-
   update(id, changes) {
     const all = read(KEYS.ROOMS);
     const idx = all.findIndex((r) => r.id === id);
     if (idx < 0) throw new Error('Room not found');
-    const occupants = read(KEYS.TENANTS).filter(
-      (t) => t.roomId === id && t.status === 'occupied'
-    ).length;
-    if (changes.bedCapacity && Number(changes.bedCapacity) < occupants) {
-      throw new Error(`Capacity cannot be less than current occupants (${occupants})`);
-    }
-    all[idx] = { ...all[idx], ...changes };
-    write(KEYS.ROOMS, all);
-    return all[idx];
+    const occupants = read(KEYS.TENANTS).filter((t) => t.roomId === id && t.status === 'occupied').length;
+    if (changes.bedCapacity && Number(changes.bedCapacity) < occupants) throw new Error(`Capacity cannot be less than current occupants (${occupants})`);
+    all[idx] = { ...all[idx], ...changes }; write(KEYS.ROOMS, all); return all[idx];
   },
-
   remove(id) {
-    const occupants = read(KEYS.TENANTS).filter(
-      (t) => t.roomId === id && t.status === 'occupied'
-    ).length;
+    const occupants = read(KEYS.TENANTS).filter((t) => t.roomId === id && t.status === 'occupied').length;
     if (occupants > 0) throw new Error(`Room has ${occupants} tenant(s)`);
-    write(KEYS.ROOMS, read(KEYS.ROOMS).filter((r) => r.id !== id));
-    return true;
+    write(KEYS.ROOMS, read(KEYS.ROOMS).filter((r) => r.id !== id)); return true;
   },
 };
 
@@ -229,17 +172,29 @@ export const tenants = {
       .filter((t) => !houseId || allRooms.find((r) => r.id === t.roomId)?.houseId === houseId)
       .map((t) => {
         const room = allRooms.find((r) => r.id === t.roomId);
-        return {
-          ...t,
-          room: room ? { id: room.id, number: room.roomNumber } : null,
-        };
+        return { ...t, room: room ? { id: room.id, number: room.roomNumber } : null };
       });
   },
+  
+  // List only those who are reserved and waiting for check-in
+  listPending(houseId) {
+    const allRooms = read(KEYS.ROOMS);
+    return read(KEYS.TENANTS)
+      .filter((t) => t.status === 'reserved')
+      .filter((t) => !houseId || allRooms.find((r) => r.id === t.roomId)?.houseId === houseId)
+      .map((t) => {
+        const room = allRooms.find((r) => r.id === t.roomId);
+        return { ...t, room: room ? { id: room.id, number: room.roomNumber } : null };
+      });
+  },
+
   create({ name, email, password, phone, emergencyContact, roomId, moveInDate }) {
     const users = read(KEYS.USERS);
     if (users.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
       throw new Error('Email already in use');
     }
+    
+    let status = 'reserved';
     if (roomId) {
       const room = read(KEYS.ROOMS).find((r) => r.id === roomId);
       if (!room) throw new Error('Room not found');
@@ -247,7 +202,9 @@ export const tenants = {
         (t) => t.roomId === roomId && t.status === 'occupied'
       ).length;
       if (occupants >= room.bedCapacity) throw new Error(`Room ${room.roomNumber} is full`);
+      status = 'occupied';
     }
+
     const boarder = {
       id: uid(),
       name,
@@ -261,7 +218,7 @@ export const tenants = {
       emergencyContact: emergencyContact || '',
       roomId: roomId || null,
       moveInDate: moveInDate || new Date().toISOString().split('T')[0],
-      status: roomId ? 'occupied' : 'reserved',
+      status: status,
       createdAt: new Date().toISOString(),
     };
     users.push(boarder);
@@ -282,6 +239,36 @@ export const tenants = {
     write(KEYS.TENANTS, allTenants);
     return boarder;
   },
+
+  // Officially check in a reserved tenant to their room
+  checkIn(id, roomId) {
+    const allTenants = read(KEYS.TENANTS);
+    const allUsers = read(KEYS.USERS);
+    const allRooms = read(KEYS.ROOMS);
+    
+    const tenant = allTenants.find(t => t.id === id);
+    const room = allRooms.find(r => r.id === roomId);
+    
+    if (!tenant) throw new Error('Tenant not found');
+    if (!room) throw new Error('Room not found');
+    
+    const occupants = allTenants.filter(t => t.roomId === roomId && t.status === 'occupied').length;
+    if (occupants >= room.bedCapacity) throw new Error(`Room ${room.roomNumber} is full`);
+
+    tenant.status = 'occupied';
+    tenant.roomId = roomId;
+    write(KEYS.TENANTS, allTenants);
+
+    const user = allUsers.find(u => u.id === id);
+    if (user) {
+      user.status = 'occupied';
+      user.roomId = roomId;
+      user.houseIds = [room.houseId];
+      write(KEYS.USERS, allUsers);
+    }
+    return tenant;
+  },
+
   remove(id) {
     write(KEYS.USERS, read(KEYS.USERS).filter((u) => u.id !== id));
     write(KEYS.TENANTS, read(KEYS.TENANTS).filter((t) => t.id !== id));
@@ -294,6 +281,7 @@ export const tenants = {
 // ================= RENT PAYMENTS =================
 function computeRentStatus(rent) {
   if (rent.amountPaid >= rent.amountDue) return 'paid';
+  if (rent.dueDate && new Date(rent.dueDate) < new Date() && rent.amountPaid < rent.amountDue) return 'overdue';
   if (rent.amountPaid > 0) return 'partial';
   return 'unpaid';
 }
@@ -307,45 +295,75 @@ export const rentPayments = {
         const tenant = tenantsArr.find((t) => t.id === p.tenantId);
         const room = tenant?.roomId ? allRooms.find((r) => r.id === tenant.roomId) : null;
         const balance = Math.max(0, p.amountDue - p.amountPaid);
-        return {
-          ...p,
-          status: computeRentStatus(p),
-          balance,
-          tenantName: tenant?.name || 'Unknown',
-          roomNumber: room?.roomNumber || '—',
-          houseId: room?.houseId || null,
-        };
+        return { ...p, status: computeRentStatus(p), balance, tenantName: tenant?.name || 'Unknown', roomNumber: room?.roomNumber || '—', houseId: room?.houseId || null };
       })
       .filter((p) => !houseId || p.houseId === houseId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
   listForTenant(tenantId) {
-    return read(KEYS.RENT_PAYMENTS)
-      .filter((p) => p.tenantId === tenantId)
-      .map((p) => ({
-        ...p,
-        status: computeRentStatus(p),
-        balance: Math.max(0, p.amountDue - p.amountPaid),
-      }));
+    return read(KEYS.RENT_PAYMENTS).filter((p) => p.tenantId === tenantId)
+      .map((p) => ({ ...p, status: computeRentStatus(p), balance: Math.max(0, p.amountDue - p.amountPaid) }));
   },
+  
+  generateRoomBills({ roomId, billingMonth, customAmount }) {
+    const allRooms = read(KEYS.ROOMS);
+    const tenantsArr = read(KEYS.TENANTS);
+    const room = allRooms.find(r => r.id === roomId);
+    if (!room) throw new Error('Room not found');
+    
+    const occupants = tenantsArr.filter(t => t.roomId === roomId && t.status === 'occupied');
+    if (occupants.length === 0) throw new Error('No tenants in this room to bill.');
+
+    const totalAmount = customAmount || room.monthlyRate;
+    const splitAmount = Math.ceil(totalAmount / occupants.length);
+
+    const allPayments = read(KEYS.RENT_PAYMENTS);
+    const created = [];
+
+    const targetDate = new Date(billingMonth + " 1");
+    const targetMonth = targetDate.getMonth();
+    const targetYear = targetDate.getFullYear();
+
+    occupants.forEach(t => {
+      let dueDate = null;
+      if (t.moveInDate) {
+        const moveIn = new Date(t.moveInDate);
+        let dueYear = targetYear;
+        let dueMonth = targetMonth;
+        const moveInDay = moveIn.getDate();
+        const daysInTargetMonth = new Date(dueYear, dueMonth + 1, 0).getDate();
+        const actualDay = Math.min(moveInDay, daysInTargetMonth);
+        dueDate = new Date(dueYear, dueMonth, actualDay).toISOString().split('T')[0];
+      } else {
+        dueDate = new Date(targetYear, targetMonth, 5).toISOString().split('T')[0];
+      }
+
+      const payment = {
+        id: uid(), 
+        tenantId: t.id, 
+        billingMonth,
+        dueDate,
+        amountDue: splitAmount, 
+        amountPaid: 0,
+        paymentMethod: null, 
+        orNumber: '', 
+        notes: `Auto-split for Room ${room.roomNumber} (${occupants.length} tenants)`,
+        createdAt: new Date().toISOString(), 
+        paidAt: null
+      };
+      allPayments.push(payment);
+      created.push(payment);
+    });
+    
+    write(KEYS.RENT_PAYMENTS, allPayments);
+    return { count: created.length, perPerson: splitAmount, total: totalAmount };
+  },
+
   create({ tenantId, billingMonth, amountDue, amountPaid, paymentMethod, orNumber, notes }) {
     const all = read(KEYS.RENT_PAYMENTS);
     const paid = Number(amountPaid) || 0;
-    const payment = {
-      id: uid(),
-      tenantId,
-      billingMonth,
-      amountDue: Number(amountDue),
-      amountPaid: paid,
-      paymentMethod: paid > 0 ? paymentMethod || 'cash' : null,
-      orNumber: paid > 0 ? orNumber || '' : '',
-      notes: notes || '',
-      createdAt: new Date().toISOString(),
-      paidAt: paid > 0 ? new Date().toISOString() : null,
-    };
-    all.push(payment);
-    write(KEYS.RENT_PAYMENTS, all);
-    return payment;
+    const payment = { id: uid(), tenantId, billingMonth, amountDue: Number(amountDue), amountPaid: paid, paymentMethod: paid > 0 ? paymentMethod || 'cash' : null, orNumber: paid > 0 ? orNumber || '' : '', notes: notes || '', createdAt: new Date().toISOString(), paidAt: paid > 0 ? new Date().toISOString() : null };
+    all.push(payment); write(KEYS.RENT_PAYMENTS, all); return payment;
   },
   recordPayment(id, { amount, paymentMethod, orNumber }) {
     const all = read(KEYS.RENT_PAYMENTS);
@@ -353,20 +371,15 @@ export const rentPayments = {
     if (idx < 0) throw new Error('Payment record not found');
     const p = all[idx];
     p.amountPaid = Math.min(p.amountDue, p.amountPaid + Number(amount));
-    p.paymentMethod = paymentMethod;
-    p.orNumber = orNumber || p.orNumber;
-    p.paidAt = new Date().toISOString();
-    write(KEYS.RENT_PAYMENTS, all);
-    return p;
+    p.paymentMethod = paymentMethod; p.orNumber = orNumber || p.orNumber; p.paidAt = new Date().toISOString();
+    write(KEYS.RENT_PAYMENTS, all); return p;
   },
   markPaid(id) {
     const all = read(KEYS.RENT_PAYMENTS);
     const idx = all.findIndex((p) => p.id === id);
     if (idx < 0) throw new Error('Not found');
-    all[idx].amountPaid = all[idx].amountDue;
-    all[idx].paidAt = new Date().toISOString();
-    write(KEYS.RENT_PAYMENTS, all);
-    return all[idx];
+    all[idx].amountPaid = all[idx].amountDue; all[idx].paidAt = new Date().toISOString();
+    write(KEYS.RENT_PAYMENTS, all); return all[idx];
   },
 };
 
@@ -379,292 +392,189 @@ export const utilityCharges = {
       .map((c) => {
         const tenant = tenantsArr.find((t) => t.id === c.tenantId);
         const room = tenant?.roomId ? allRooms.find((r) => r.id === tenant.roomId) : null;
-        return {
-          ...c,
-          tenantName: tenant?.name || 'Unknown',
-          roomNumber: room?.roomNumber || '—',
-          houseId: room?.houseId || null,
-        };
+        return { ...c, tenantName: tenant?.name || 'Unknown', roomNumber: room?.roomNumber || '—', houseId: room?.houseId || null };
       })
       .filter((c) => !houseId || c.houseId === houseId);
   },
   listForTenant(tenantId) {
     return read(KEYS.UTILITY_CHARGES).filter((c) => c.tenantId === tenantId);
   },
+  generateRoomUtilities({ roomId, chargeType, billingPeriod, totalAmount, notes }) {
+    const allRooms = read(KEYS.ROOMS);
+    const tenantsArr = read(KEYS.TENANTS);
+    const room = allRooms.find(r => r.id === roomId);
+    if (!room) throw new Error('Room not found');
+    
+    const occupants = tenantsArr.filter(t => t.roomId === roomId && t.status === 'occupied');
+    if (occupants.length === 0) throw new Error('No tenants in this room to bill.');
+
+    const splitAmount = Math.ceil(Number(totalAmount) / occupants.length);
+
+    const allCharges = read(KEYS.UTILITY_CHARGES);
+    const created = [];
+
+    occupants.forEach(t => {
+      const charge = { id: uid(), tenantId: t.id, chargeType, amountBilled: splitAmount, billingPeriod, status: 'unpaid', notes: `Split for Room ${room.roomNumber}`, createdAt: new Date().toISOString() };
+      allCharges.push(charge);
+      created.push(charge);
+    });
+    
+    write(KEYS.UTILITY_CHARGES, allCharges);
+    return { count: created.length, perPerson: splitAmount, total: totalAmount };
+  },
   create({ tenantId, chargeType, amountBilled, billingPeriod, notes }) {
     const all = read(KEYS.UTILITY_CHARGES);
-    const charge = {
-      id: uid(),
-      tenantId,
-      chargeType,
-      amountBilled: Number(amountBilled),
-      billingPeriod,
-      status: 'unpaid',
-      notes: notes || '',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(charge);
-    write(KEYS.UTILITY_CHARGES, all);
-    return charge;
+    const charge = { id: uid(), tenantId, chargeType, amountBilled: Number(amountBilled), billingPeriod, status: 'unpaid', notes: notes || '', createdAt: new Date().toISOString() };
+    all.push(charge); write(KEYS.UTILITY_CHARGES, all); return charge;
   },
   markPaid(id) {
     const all = read(KEYS.UTILITY_CHARGES);
     const idx = all.findIndex((c) => c.id === id);
     if (idx < 0) throw new Error('Not found');
-    all[idx].status = 'paid';
-    write(KEYS.UTILITY_CHARGES, all);
-    return all[idx];
+    all[idx].status = 'paid'; write(KEYS.UTILITY_CHARGES, all); return all[idx];
   },
   remove(id) {
-    write(KEYS.UTILITY_CHARGES, read(KEYS.UTILITY_CHARGES).filter((c) => c.id !== id));
-    return true;
+    write(KEYS.UTILITY_CHARGES, read(KEYS.UTILITY_CHARGES).filter((c) => c.id !== id)); return true;
   },
 };
 
 // ================= EXPENSES =================
 export const expenses = {
   list(houseId) {
-    return read(KEYS.EXPENSES)
-      .filter((e) => !houseId || e.houseId === houseId)
-      .sort((a, b) => b.dateLogged.localeCompare(a.dateLogged));
+    return read(KEYS.EXPENSES).filter((e) => !houseId || e.houseId === houseId).sort((a, b) => b.dateLogged.localeCompare(a.dateLogged));
   },
   create({ houseId, description, category, amount, dateLogged }) {
     const all = read(KEYS.EXPENSES);
-    const expense = {
-      id: uid(),
-      houseId,
-      description,
-      category: category || 'other',
-      amount: Number(amount),
-      dateLogged: dateLogged || new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
-    };
-    all.push(expense);
-    write(KEYS.EXPENSES, all);
-    return expense;
+    const expense = { id: uid(), houseId, description, category: category || 'other', amount: Number(amount), dateLogged: dateLogged || new Date().toISOString().split('T')[0], createdAt: new Date().toISOString() };
+    all.push(expense); write(KEYS.EXPENSES, all); return expense;
   },
   remove(id) {
-    write(KEYS.EXPENSES, read(KEYS.EXPENSES).filter((e) => e.id !== id));
-    return true;
+    write(KEYS.EXPENSES, read(KEYS.EXPENSES).filter((e) => e.id !== id)); return true;
   },
 };
 
 // ================= SETTINGS =================
 const DEFAULT_SETTINGS = {
-  ownerName: '',
-  gcash: { accountName: '', phone: '', enabled: true },
-  bank: { bankName: '', accountName: '', accountNumber: '', enabled: false },
-  cash: { enabled: true, note: 'Pay in person to the caretaker' },
+  ownerName: '', gcash: { accountName: '', phone: '', enabled: true }, bank: { bankName: '', accountName: '', accountNumber: '', enabled: false }, cash: { enabled: true, note: 'Pay in person to the caretaker' },
 };
-
 export const settings = {
   get() {
     const stored = read(KEYS.SETTINGS, null);
     if (!stored) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-    return {
-      ...DEFAULT_SETTINGS,
-      ...stored,
-      gcash: { ...DEFAULT_SETTINGS.gcash, ...(stored.gcash || {}) },
-      bank: { ...DEFAULT_SETTINGS.bank, ...(stored.bank || {}) },
-      cash: { ...DEFAULT_SETTINGS.cash, ...(stored.cash || {}) },
-    };
+    return { ...DEFAULT_SETTINGS, ...stored, gcash: { ...DEFAULT_SETTINGS.gcash, ...(stored.gcash || {}) }, bank: { ...DEFAULT_SETTINGS.bank, ...(stored.bank || {}) }, cash: { ...DEFAULT_SETTINGS.cash, ...(stored.cash || {}) } };
   },
   update(changes) {
     const current = settings.get();
-    const merged = {
-      ...current,
-      ...changes,
-      gcash: { ...current.gcash, ...(changes.gcash || {}) },
-      bank: { ...current.bank, ...(changes.bank || {}) },
-      cash: { ...current.cash, ...(changes.cash || {}) },
-    };
-    write(KEYS.SETTINGS, merged);
-    return merged;
+    const merged = { ...current, ...changes, gcash: { ...current.gcash, ...(changes.gcash || {}) }, bank: { ...current.bank, ...(changes.bank || {}) }, cash: { ...current.cash, ...(changes.cash || {}) } };
+    write(KEYS.SETTINGS, merged); return merged;
   },
 };
 
-// ================= RESERVATIONS (guest requests + tenant bookings) =================
+// ================= RESERVATIONS =================
 export const reservations = {
   list(houseId) {
     const allRooms = read(KEYS.ROOMS);
     const tenantsArr = read(KEYS.TENANTS);
-    
     const guestReqs = read(KEYS.RESERVATIONS).map((r) => {
       const room = allRooms.find((rm) => rm.id === r.roomId);
-      return {
-        ...r,
-        type: 'guest', 
-        roomNumber: room?.roomNumber || '—',
-        roomRate: room?.monthlyRate || 0,
-        houseId: room?.houseId || null,
-        tenantName: r.fullName, 
-      };
+      return { ...r, type: 'guest', roomNumber: room?.roomNumber || '—', roomRate: room?.monthlyRate || 0, houseId: room?.houseId || null, tenantName: r.fullName };
     });
-
     const tenantBookings = read(KEYS.BOOKINGS).map((b) => {
       const room = allRooms.find((rm) => rm.id === b.roomId);
       const tenant = tenantsArr.find((t) => t.id === b.tenantId);
-      return {
-        ...b,
-        type: 'booking', 
-        fullName: tenant?.name || b.guestName || 'Unknown',
-        phone: tenant?.phone || b.guestPhone || '—',
-        email: tenant?.email || '—',
-        roomNumber: room?.roomNumber || '—',
-        roomRate: room?.monthlyRate || 0,
-        houseId: room?.houseId || null,
-        tenantName: tenant?.name || b.guestName || 'Unknown',
-        bedNumber: b.bedNumber,
-      };
+      return { ...b, type: 'booking', fullName: tenant?.name || b.guestName || 'Unknown', phone: tenant?.phone || b.guestPhone || '—', email: tenant?.email || '—', roomNumber: room?.roomNumber || '—', roomRate: room?.monthlyRate || 0, houseId: room?.houseId || null, tenantName: tenant?.name || b.guestName || 'Unknown', bedNumber: b.bedNumber };
     });
-
-    return [...guestReqs, ...tenantBookings]
-      .filter((r) => !houseId || r.houseId === houseId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return [...guestReqs, ...tenantBookings].filter((r) => !houseId || r.houseId === houseId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
-
   create({ houseId, roomId, fullName, phone, email, moveInDate, notes }) {
-    if (!houseId || !roomId || !fullName || !phone) {
-      throw new Error('Please fill in all required fields.');
-    }
+    if (!houseId || !roomId || !fullName || !phone) throw new Error('Please fill in all required fields.');
     const room = read(KEYS.ROOMS).find((r) => r.id === roomId);
     if (!room || room.houseId !== houseId) throw new Error('Room not found.');
-
-    const occupants = read(KEYS.TENANTS).filter(
-      (t) => t.roomId === roomId && t.status === 'occupied'
-    ).length;
-    const pending = read(KEYS.RESERVATIONS).filter(
-      (r) => r.roomId === roomId && r.status === 'pending'
-    ).length;
-    if (occupants + pending >= room.bedCapacity) {
-      throw new Error('This room is fully reserved.');
-    }
-
+    const occupants = read(KEYS.TENANTS).filter((t) => t.roomId === roomId && t.status === 'occupied').length;
+    const pending = read(KEYS.RESERVATIONS).filter((r) => r.roomId === roomId && r.status === 'pending').length;
+    if (occupants + pending >= room.bedCapacity) throw new Error('This room is fully reserved.');
     const all = read(KEYS.RESERVATIONS);
     const reference = 'NBR-' + Math.random().toString(36).slice(2, 7).toUpperCase();
-    const reservation = {
-      id: uid(),
-      reference,
-      houseId,
-      roomId,
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      email: (email || '').trim(),
-      moveInDate: moveInDate || new Date().toISOString().split('T')[0],
-      notes: notes || '',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(reservation);
-    write(KEYS.RESERVATIONS, all);
-    return reservation;
+    const reservation = { id: uid(), reference, houseId, roomId, fullName: fullName.trim(), phone: phone.trim(), email: (email || '').trim(), moveInDate: moveInDate || new Date().toISOString().split('T')[0], notes: notes || '', status: 'pending', createdAt: new Date().toISOString() };
+    all.push(reservation); write(KEYS.RESERVATIONS, all); return reservation;
   },
-
   approve(id, password, type = 'guest') {
-    if (type === 'booking') {
-      return bookings.approve(id, password);
-    }
-    
+    if (type === 'booking') return bookings.approve(id, password);
     const all = read(KEYS.RESERVATIONS);
     const idx = all.findIndex((r) => r.id === id);
     if (idx < 0) throw new Error('Reservation not found');
     const res = all[idx];
     if (res.status !== 'pending') throw new Error('Already processed');
-
-    const boarder = tenants.create({
-      name: res.fullName,
-      email: res.email || `${res.reference.toLowerCase()}@nearbai.local`,
-      password: password || 'Tenant123!',
-      phone: res.phone,
-      emergencyContact: '',
-      roomId: res.roomId,
-      moveInDate: res.moveInDate,
-    });
-    res.status = 'approved';
-    res.tenantId = boarder.id;
-    res.processedAt = new Date().toISOString();
-    write(KEYS.RESERVATIONS, all);
-    return res;
+    const boarder = tenants.create({ name: res.fullName, email: res.email || `${res.reference.toLowerCase()}@nearbai.local`, password: password || 'Tenant123!', phone: res.phone, emergencyContact: '', roomId: res.roomId, moveInDate: res.moveInDate });
+    res.status = 'approved'; res.tenantId = boarder.id; res.processedAt = new Date().toISOString();
+    write(KEYS.RESERVATIONS, all); return res;
   },
-
   reject(id, reason, type = 'guest') {
-    if (type === 'booking') {
-      return bookings.reject(id, reason);
-    }
-    
+    if (type === 'booking') return bookings.reject(id, reason);
     const all = read(KEYS.RESERVATIONS);
     const idx = all.findIndex((r) => r.id === id);
     if (idx < 0) throw new Error('Reservation not found');
-    all[idx].status = 'rejected';
-    all[idx].rejectionReason = reason || 'No reason provided';
-    all[idx].processedAt = new Date().toISOString();
-    write(KEYS.RESERVATIONS, all);
-    return all[idx];
+    all[idx].status = 'rejected'; all[idx].rejectionReason = reason || 'No reason provided'; all[idx].processedAt = new Date().toISOString();
+    write(KEYS.RESERVATIONS, all); return all[idx];
+  },
+  
+  // NEW: Mark reservation as fully checked-in
+  checkIn(id) {
+    const all = read(KEYS.RESERVATIONS);
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx >= 0) {
+      all[idx].status = 'checked_in';
+      all[idx].checkedInAt = new Date().toISOString();
+      write(KEYS.RESERVATIONS, all);
+      return all[idx];
+    }
+    
+    const allBk = read(KEYS.BOOKINGS);
+    const idxBk = allBk.findIndex((b) => b.id === id);
+    if (idxBk >= 0) {
+      allBk[idxBk].status = 'checked_in';
+      allBk[idxBk].checkedInAt = new Date().toISOString();
+      write(KEYS.BOOKINGS, allBk);
+      return allBk[idxBk];
+    }
+    
+    throw new Error('Reservation not found');
   },
 
-  getByReference(ref) {
-    return read(KEYS.RESERVATIONS).find((r) => r.reference === ref) || null;
-  },
+  getByReference(ref) { return read(KEYS.RESERVATIONS).find((r) => r.reference === ref) || null; },
 };
 
 // ================= ANNOUNCEMENTS =================
 export const announcements = {
-  list(houseId) {
-    return read(KEYS.ANNOUNCEMENTS)
-      .filter((a) => !houseId || a.houseId === houseId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  },
+  list(houseId) { return read(KEYS.ANNOUNCEMENTS).filter((a) => !houseId || a.houseId === houseId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)); },
   create({ houseId, title, body, priority }) {
     const all = read(KEYS.ANNOUNCEMENTS);
-    const ann = {
-      id: uid(),
-      houseId,
-      title,
-      body,
-      priority: priority || 'normal',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(ann);
-    write(KEYS.ANNOUNCEMENTS, all);
-    return ann;
+    const ann = { id: uid(), houseId, title, body, priority: priority || 'normal', createdAt: new Date().toISOString() };
+    all.push(ann); write(KEYS.ANNOUNCEMENTS, all); return ann;
   },
-  remove(id) {
-    write(KEYS.ANNOUNCEMENTS, read(KEYS.ANNOUNCEMENTS).filter((a) => a.id !== id));
-  },
+  remove(id) { write(KEYS.ANNOUNCEMENTS, read(KEYS.ANNOUNCEMENTS).filter((a) => a.id !== id)); },
 };
 
-// ================= BOOKINGS (interactive bed reservation) =================
+// ================= BOOKINGS =================
 export const bookings = {
   list(houseId) {
     const allRooms = read(KEYS.ROOMS);
     const tenantsArr = read(KEYS.TENANTS);
-    return read(KEYS.BOOKINGS)
-      .map((b) => {
-        const room = allRooms.find((r) => r.id === b.roomId);
-        const tenant = tenantsArr.find((t) => t.id === b.tenantId);
-        return {
-          ...b,
-          roomNumber: room?.roomNumber || '—',
-          houseId: room?.houseId || null,
-          tenantName: tenant?.name || b.guestName || 'Unknown',
-        };
-      })
-      .filter((b) => !houseId || b.houseId === houseId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return read(KEYS.BOOKINGS).map((b) => {
+      const room = allRooms.find((r) => r.id === b.roomId);
+      const tenant = tenantsArr.find((t) => t.id === b.tenantId);
+      return { ...b, roomNumber: room?.roomNumber || '—', houseId: room?.houseId || null, tenantName: tenant?.name || b.guestName || 'Unknown' };
+    }).filter((b) => !houseId || b.houseId === houseId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
   listForTenant(tenantId) {
     const allRooms = read(KEYS.ROOMS);
-    return read(KEYS.BOOKINGS)
-      .filter((b) => b.tenantId === tenantId)
-      .map((b) => {
-        const room = allRooms.find((r) => r.id === b.roomId);
-        return { ...b, roomNumber: room?.roomNumber || '—' };
-      });
+    return read(KEYS.BOOKINGS).filter((b) => b.tenantId === tenantId).map((b) => {
+      const room = allRooms.find((r) => r.id === b.roomId);
+      return { ...b, roomNumber: room?.roomNumber || '—' };
+    });
   },
   takenBeds(roomId) {
-    const active = read(KEYS.BOOKINGS).filter(
-      (b) => b.roomId === roomId && (b.status === 'pending' || b.status === 'approved')
-    );
+    const active = read(KEYS.BOOKINGS).filter((b) => b.roomId === roomId && (b.status === 'pending' || b.status === 'approved'));
     return active.map((b) => b.bedNumber);
   },
   create({ tenantId, roomId, bedNumber, moveInDate, guestName, guestPhone }) {
@@ -672,23 +582,9 @@ export const bookings = {
     if (!room) throw new Error('Room not found');
     const taken = bookings.takenBeds(roomId);
     if (taken.includes(bedNumber)) throw new Error(`Bed ${bedNumber} is already booked.`);
-
     const all = read(KEYS.BOOKINGS);
-    const booking = {
-      id: uid(),
-      reference: 'BKG-' + Math.random().toString(36).slice(2, 7).toUpperCase(),
-      tenantId: tenantId || null,
-      guestName: guestName || '',
-      guestPhone: guestPhone || '',
-      roomId,
-      bedNumber,
-      moveInDate: moveInDate || new Date().toISOString().split('T')[0],
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    all.push(booking);
-    write(KEYS.BOOKINGS, all);
-    return booking;
+    const booking = { id: uid(), reference: 'BKG-' + Math.random().toString(36).slice(2, 7).toUpperCase(), tenantId: tenantId || null, guestName: guestName || '', guestPhone: guestPhone || '', roomId, bedNumber, moveInDate: moveInDate || new Date().toISOString().split('T')[0], status: 'pending', createdAt: new Date().toISOString() };
+    all.push(booking); write(KEYS.BOOKINGS, all); return booking;
   },
   approve(id, password) {
     const all = read(KEYS.BOOKINGS);
@@ -696,45 +592,27 @@ export const bookings = {
     if (idx < 0) throw new Error('Booking not found');
     const bk = all[idx];
     if (bk.status !== 'pending') throw new Error('Already processed');
-
     if (!bk.tenantId && bk.guestName) {
-      const newTenant = tenants.create({
-        name: bk.guestName,
-        email: `${bk.reference.toLowerCase()}@nearbai.local`,
-        password: password || 'Tenant123!',
-        phone: bk.guestPhone,
-        emergencyContact: '',
-        roomId: bk.roomId,
-        moveInDate: bk.moveInDate,
-      });
+      const newTenant = tenants.create({ name: bk.guestName, email: `${bk.reference.toLowerCase()}@nearbai.local`, password: password || 'Tenant123!', phone: bk.guestPhone, emergencyContact: '', roomId: bk.roomId, moveInDate: bk.moveInDate });
       bk.tenantId = newTenant.id;
     }
-    bk.status = 'approved';
-    bk.processedAt = new Date().toISOString();
-    write(KEYS.BOOKINGS, all);
-    return bk;
+    bk.status = 'approved'; bk.processedAt = new Date().toISOString();
+    write(KEYS.BOOKINGS, all); return bk;
   },
   reject(id, reason) {
     const all = read(KEYS.BOOKINGS);
     const idx = all.findIndex((b) => b.id === id);
     if (idx < 0) throw new Error('Booking not found');
-    all[idx].status = 'rejected';
-    all[idx].rejectionReason = reason || 'No reason provided';
-    all[idx].processedAt = new Date().toISOString();
-    write(KEYS.BOOKINGS, all);
-    return all[idx];
+    all[idx].status = 'rejected'; all[idx].rejectionReason = reason || 'No reason provided'; all[idx].processedAt = new Date().toISOString();
+    write(KEYS.BOOKINGS, all); return all[idx];
   },
   cancel(id, byTenant = false) {
     const all = read(KEYS.BOOKINGS);
     const idx = all.findIndex((b) => b.id === id);
     if (idx < 0) throw new Error('Booking not found');
-    if (byTenant && all[idx].status !== 'pending') {
-      throw new Error('Only pending bookings can be cancelled');
-    }
-    all[idx].status = 'cancelled';
-    all[idx].cancelledAt = new Date().toISOString();
-    write(KEYS.BOOKINGS, all);
-    return all[idx];
+    if (byTenant && all[idx].status !== 'pending') throw new Error('Only pending bookings can be cancelled');
+    all[idx].status = 'cancelled'; all[idx].cancelledAt = new Date().toISOString();
+    write(KEYS.BOOKINGS, all); return all[idx];
   },
 };
 
@@ -743,34 +621,23 @@ export const favorites = {
   list(tenantId) {
     const allRooms = read(KEYS.ROOMS);
     const allHouses = read(KEYS.HOUSES);
-    return read(KEYS.FAVORITES)
-      .filter((f) => f.tenantId === tenantId)
-      .map((f) => {
-        const house = allHouses.find((h) => h.id === f.houseId);
-        const houseRooms = allRooms.filter((r) => r.houseId === f.houseId);
-        const totalBeds = houseRooms.reduce((s, r) => s + r.bedCapacity, 0);
-        const occupied = tenants.list(f.houseId).filter((t) => t.status === 'occupied').length;
-        return { ...f, house, available: Math.max(0, totalBeds - occupied) };
-      });
+    return read(KEYS.FAVORITES).filter((f) => f.tenantId === tenantId).map((f) => {
+      const house = allHouses.find((h) => h.id === f.houseId);
+      const houseRooms = allRooms.filter((r) => r.houseId === f.houseId);
+      const totalBeds = houseRooms.reduce((s, r) => s + r.bedCapacity, 0);
+      const occupied = tenants.list(f.houseId).filter((t) => t.status === 'occupied').length;
+      return { ...f, house, available: Math.max(0, totalBeds - occupied) };
+    });
   },
   isFavorite(tenantId, houseId) {
-    return read(KEYS.FAVORITES).some(
-      (f) => f.tenantId === tenantId && f.houseId === houseId
-    );
+    return read(KEYS.FAVORITES).some((f) => f.tenantId === tenantId && f.houseId === houseId);
   },
   toggle(tenantId, houseId) {
     const all = read(KEYS.FAVORITES);
-    const existing = all.findIndex(
-      (f) => f.tenantId === tenantId && f.houseId === houseId
-    );
-    if (existing >= 0) {
-      all.splice(existing, 1);
-      write(KEYS.FAVORITES, all);
-      return false;
-    }
+    const existing = all.findIndex((f) => f.tenantId === tenantId && f.houseId === houseId);
+    if (existing >= 0) { all.splice(existing, 1); write(KEYS.FAVORITES, all); return false; }
     all.push({ id: uid(), tenantId, houseId, createdAt: new Date().toISOString() });
-    write(KEYS.FAVORITES, all);
-    return true;
+    write(KEYS.FAVORITES, all); return true;
   },
 };
 
@@ -791,16 +658,18 @@ export const analytics = {
 
     const totalRentDue = rents.reduce((s, r) => s + r.amountDue, 0);
     const totalRentPaid = rents.reduce((s, r) => s + r.amountPaid, 0);
-    const totalUtil = utils.reduce((s, c) => s + (c.status === 'paid' ? c.amountBilled : 0), 0);
+    const totalUtilBilled = utils.reduce((s, c) => s + c.amountBilled, 0);
+    const totalUtilPaid = utils.reduce((s, c) => s + (c.status === 'paid' ? c.amountBilled : 0), 0);
+    const totalUtilUnpaid = utils.reduce((s, c) => s + (c.status === 'unpaid' ? c.amountBilled : 0), 0);
     const totalExpenses = exp.reduce((s, e) => s + e.amount, 0);
 
-    const totalCollections = totalRentPaid + totalUtil;
+    const totalCollections = totalRentPaid + totalUtilPaid;
     const netIncome = totalCollections - totalExpenses;
 
-    const paid = rents.filter((r) => r.status === 'paid').length;
-    const partial = rents.filter((r) => r.status === 'partial').length;
-    const unpaid = rents.filter((r) => r.status === 'unpaid').length;
-    const overdue = rents.filter((r) => r.status !== 'paid' && r.balance > 0).length;
+    const paidList = rents.filter((r) => r.status === 'paid');
+    const unpaidList = rents.filter((r) => r.status === 'unpaid');
+    const partialList = rents.filter((r) => r.status === 'partial');
+    const overdueList = rents.filter((r) => r.status === 'overdue');
 
     return {
       propertiesCount: houses.list().length,
@@ -811,14 +680,15 @@ export const analytics = {
       occupancyRate,
       totalRentDue,
       totalRentPaid,
-      totalUtil,
-      totalCollections,
+      totalUtilBilled,
+      totalUtilPaid,
+      totalUtilUnpaid,
       totalExpenses,
+      totalCollections,
       netIncome,
-      paid,
-      partial,
-      unpaid,
-      overdue,
+      paidCount: paidList.length,
+      unpaidList: [...unpaidList, ...partialList],
+      overdueList,
       pendingReservations: pendingRes,
       recentRent: rents.slice(0, 5),
     };
